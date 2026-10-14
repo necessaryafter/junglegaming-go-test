@@ -17,3 +17,11 @@ pendente persistida permite apagar a mensagem: o worker assume a continuidade.
 A deduplicação no banco sobrevive a reinícios e funciona entre instâncias e
 transportes. O hash detecta a reutilização de uma identidade com conteúdo diferente.
 Persistir o resultado evita que um replay devolva o saldo de uma operação posterior.
+
+## Verificação de queda após commit
+
+O [teste de recuperação do consumidor](../../internal/wagering/worker/consumer_recovery_integration_test.go) interrompe
+um processo na chamada de delete, depois de conferir o commit por outra conexão.
+Outro processo recebe a mesma mensagem após a expiração de visibilidade do SQS e
+a remove após reconhecer o replay. Carteira, transações, ledger, inbox e snapshots
+da outbox permanecem iguais, incluindo IDs e payloads dos eventos.
