@@ -340,11 +340,20 @@ func assertCommittedRecovery(
 		t.Fatalf("transaction status = %s; want PROCESSED", transaction.Status)
 	}
 
+	const completedInboxQuery = `
+        SELECT
+            COUNT(*),
+            COALESCE(MIN(payload_hash), '')
+        FROM inbox
+        WHERE consumer_name = 'wager'
+          AND message_id = 'crash-message'
+          AND completed_at IS NOT NULL
+    `
+
 	var inboxCount int
 	var messageHash string
 
-	err = pool.QueryRow(t.Context(), `SELECT count(*),COALESCE(min(payload_hash),'') FROM inbox
-  WHERE consumer_name='wager' AND message_id='crash-message' AND completed_at IS NOT NULL`).Scan(
+	err = pool.QueryRow(t.Context(), completedInboxQuery).Scan(
 		&inboxCount,
 		&messageHash,
 	)
@@ -357,12 +366,18 @@ func assertCommittedRecovery(
 		t.Fatal("committed inbox does not contain exactly one matching message hash")
 	}
 
+	const financialEventsQuery = `
+        SELECT
+            COUNT(*),
+            COUNT(*) FILTER (WHERE event_type = 'WagerTransactionProcessed'),
+            COUNT(*) FILTER (WHERE event_type = 'WalletBalanceChanged')
+        FROM outbox
+        WHERE payload->'data'->>'transactionId' = $1
+    `
+
 	var financialEvents, processedEvents, balanceEvents int
 
-	err = pool.QueryRow(t.Context(), `SELECT count(*),
-        count(*) FILTER (WHERE event_type='WagerTransactionProcessed'),
-        count(*) FILTER (WHERE event_type='WalletBalanceChanged')
-        FROM outbox WHERE payload->'data'->>'transactionId'=$1`, transaction.ID).Scan(
+	err = pool.QueryRow(t.Context(), financialEventsQuery, transaction.ID).Scan(
 		&financialEvents,
 		&processedEvents,
 		&balanceEvents,
@@ -388,18 +403,38 @@ func assertCommittedRecovery(
 		t.Fatalf("wallet version = %d; want 2", current.Version)
 	}
 
+	const committedSnapshotQuery = `
+        SELECT JSONB_BUILD_OBJECT(
+            'wallet', (
+                SELECT TO_JSONB(w)
+                FROM wallets AS w
+                WHERE id = $1
+            ),
+            'transactions', (
+                SELECT JSONB_AGG(TO_JSONB(t) ORDER BY id)
+                FROM wager_transactions AS t
+                WHERE wallet_id = $1
+            ),
+            'ledger', (
+                SELECT JSONB_AGG(TO_JSONB(l) ORDER BY id)
+                FROM wallet_ledger AS l
+                WHERE wallet_id = $1
+            ),
+            'inbox', (
+                SELECT JSONB_AGG(TO_JSONB(i) ORDER BY consumer_name, message_id)
+                FROM inbox AS i
+            ),
+            'outbox', (
+                SELECT JSONB_AGG(TO_JSONB(o) ORDER BY event_id)
+                FROM outbox AS o
+                WHERE aggregate_id = $1
+            )
+        )
+    `
+
 	var snapshot []byte
 
-	err = pool.QueryRow(t.Context(), `SELECT jsonb_build_object(
-        'wallet', (SELECT to_jsonb(w) FROM wallets AS w WHERE id=$1),
-        'transactions', (SELECT jsonb_agg(to_jsonb(t) ORDER BY id)
-            FROM wager_transactions AS t WHERE wallet_id=$1),
-        'ledger', (SELECT jsonb_agg(to_jsonb(l) ORDER BY id)
-            FROM wallet_ledger AS l WHERE wallet_id=$1),
-        'inbox', (SELECT jsonb_agg(to_jsonb(i) ORDER BY consumer_name,message_id) FROM inbox AS i),
-        'outbox', (SELECT jsonb_agg(to_jsonb(o) ORDER BY event_id)
-            FROM outbox AS o WHERE aggregate_id=$1)
-    )`, walletID).Scan(&snapshot)
+	err = pool.QueryRow(t.Context(), committedSnapshotQuery, walletID).Scan(&snapshot)
 	if err != nil {
 		t.Fatal(err)
 	}

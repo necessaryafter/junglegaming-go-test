@@ -88,12 +88,18 @@ func TestPublisherRecoveryProcess(t *testing.T) {
 	ticker := time.NewTicker(50 * time.Millisecond)
 	defer ticker.Stop()
 
+	const publicationStatusQuery = `
+        SELECT published_at IS NOT NULL AS published
+        FROM outbox
+        WHERE event_id = $1
+    `
+
 	for {
 		var published bool
 
 		err := pool.QueryRow(
 			ctx,
-			`SELECT published_at IS NOT NULL FROM outbox WHERE event_id=$1`,
+			publicationStatusQuery,
 			os.Getenv("JUNGLE_RECOVERY_EVENT"),
 		).Scan(&published)
 		if err != nil {
@@ -179,11 +185,19 @@ func TestPublisherRecoversAfterInterruption(t *testing.T) {
 				t.Fatalf("bet status = %s; want PROCESSED", result.Status)
 			}
 
+			const balanceEventQuery = `
+                SELECT
+                    event_id::text,
+                    payload
+                FROM outbox
+                WHERE event_type = 'WalletBalanceChanged'
+                  AND payload->'data'->>'transactionId' = $1
+            `
+
 			var eventID string
 			var payload []byte
 
-			err = fixture.pool.QueryRow(ctx, `SELECT event_id::text,payload FROM outbox
-    WHERE event_type='WalletBalanceChanged' AND payload->'data'->>'transactionId'=$1`, result.TransactionID).Scan(
+			err = fixture.pool.QueryRow(ctx, balanceEventQuery, result.TransactionID).Scan(
 				&eventID,
 				&payload,
 			)
@@ -192,9 +206,13 @@ func TestPublisherRecoversAfterInterruption(t *testing.T) {
 			}
 
 			// Keep other genuine events pending, so both publishers dispute this exact event.
+			const deferOtherEventsQuery = `
+                UPDATE outbox
+                SET next_attempt_at = NOW() + INTERVAL '1 day'
+                WHERE event_id <> $1
+            `
 
-			if _, err := fixture.pool.Exec(ctx, `UPDATE outbox SET next_attempt_at=now()+interval '1 day'
-    WHERE event_id<>$1`, eventID); err != nil {
+			if _, err := fixture.pool.Exec(ctx, deferOtherEventsQuery, eventID); err != nil {
 				t.Fatal(err)
 			}
 
@@ -209,13 +227,23 @@ func TestPublisherRecoversAfterInterruption(t *testing.T) {
 				t.Fatal("publisher reached the wrong interruption boundary")
 			}
 
+			const claimedEventQuery = `
+                SELECT
+                    lease_id::text,
+                    lease_until,
+                    published_at IS NOT NULL AS published,
+                    processing_attempts,
+                    publication_failures
+                FROM outbox
+                WHERE event_id = $1
+            `
+
 			var abandonedLease string
 			var published bool
 			var leaseUntil time.Time
 			var claims, failures int
 
-			err = fixture.pool.QueryRow(ctx, `SELECT lease_id::text,lease_until,published_at IS NOT NULL,
-    processing_attempts,publication_failures FROM outbox WHERE event_id=$1`, eventID).Scan(
+			err = fixture.pool.QueryRow(ctx, claimedEventQuery, eventID).Scan(
 				&abandonedLease,
 				&leaseUntil,
 				&published,
@@ -262,13 +290,23 @@ func TestPublisherRecoversAfterInterruption(t *testing.T) {
 				t.Fatal("SQS did not accept the recovered publication")
 			}
 
+			const completedEventQuery = `
+                SELECT
+                    published_at IS NOT NULL AS published,
+                    published_at,
+                    lease_id IS NULL AND lease_until IS NULL AS lease_released,
+                    processing_attempts,
+                    publication_failures,
+                    payload
+                FROM outbox
+                WHERE event_id = $1
+            `
+
 			var leaseReleased bool
 			var publishedAt time.Time
 			var persistedPayload []byte
 
-			err = fixture.pool.QueryRow(ctx, `SELECT published_at IS NOT NULL,published_at,
-    lease_id IS NULL AND lease_until IS NULL,processing_attempts,publication_failures,payload
-    FROM outbox WHERE event_id=$1`, eventID).Scan(
+			err = fixture.pool.QueryRow(ctx, completedEventQuery, eventID).Scan(
 				&published,
 				&publishedAt,
 				&leaseReleased,
@@ -468,19 +506,46 @@ func publicationFinancialSnapshot(
 ) []byte {
 	t.Helper()
 
+	const financialSnapshotQuery = `
+        SELECT JSONB_BUILD_OBJECT(
+            'wallet', (
+                SELECT TO_JSONB(w)
+                FROM wallets AS w
+                WHERE id = $1
+            ),
+            'transactions', (
+                SELECT JSONB_AGG(TO_JSONB(t) ORDER BY id)
+                FROM wager_transactions AS t
+                WHERE wallet_id = $1
+            ),
+            'ledger', (
+                SELECT JSONB_AGG(TO_JSONB(l) ORDER BY id)
+                FROM wallet_ledger AS l
+                WHERE wallet_id = $1
+            ),
+            'inbox', (
+                SELECT JSONB_AGG(TO_JSONB(i) ORDER BY consumer_name, message_id)
+                FROM inbox AS i
+            ),
+            'events', (
+                SELECT JSONB_AGG(
+                    JSONB_BUILD_OBJECT(
+                        'id', event_id,
+                        'aggregateId', aggregate_id,
+                        'type', event_type,
+                        'payload', payload,
+                        'occurredAt', occurred_at
+                    ) ORDER BY event_id
+                )
+                FROM outbox
+                WHERE aggregate_id = $1
+            )
+        )
+    `
+
 	var snapshot []byte
 
-	err := pool.QueryRow(t.Context(), `SELECT jsonb_build_object(
-  'wallet', (SELECT to_jsonb(w) FROM wallets AS w WHERE id=$1),
-  'transactions', (SELECT jsonb_agg(to_jsonb(t) ORDER BY id)
-   FROM wager_transactions AS t WHERE wallet_id=$1),
-  'ledger', (SELECT jsonb_agg(to_jsonb(l) ORDER BY id)
-   FROM wallet_ledger AS l WHERE wallet_id=$1),
-  'inbox', (SELECT jsonb_agg(to_jsonb(i) ORDER BY consumer_name,message_id) FROM inbox AS i),
-  'events', (SELECT jsonb_agg(jsonb_build_object(
-   'id',event_id,'aggregateId',aggregate_id,'type',event_type,'payload',payload,'occurredAt',occurred_at
-   ) ORDER BY event_id) FROM outbox WHERE aggregate_id=$1)
- )`, walletID).Scan(&snapshot)
+	err := pool.QueryRow(t.Context(), financialSnapshotQuery, walletID).Scan(&snapshot)
 	if err != nil {
 		t.Fatal(err)
 	}
