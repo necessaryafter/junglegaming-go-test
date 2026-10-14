@@ -34,6 +34,12 @@ type recoveryFixture struct {
 func setupRecovery(t *testing.T) recoveryFixture {
 	t.Helper()
 
+	return setupRecoveryWithin(t, 60*time.Second)
+}
+
+func setupRecoveryWithin(t *testing.T, timeout time.Duration) recoveryFixture {
+	t.Helper()
+
 	databaseURL := os.Getenv("TEST_DATABASE_URL")
 	issuer := os.Getenv("TEST_OIDC_ISSUER")
 	endpoint := os.Getenv("TEST_SQS_ENDPOINT")
@@ -41,7 +47,7 @@ func setupRecovery(t *testing.T) recoveryFixture {
 		t.Skip("TEST_DATABASE_URL, TEST_OIDC_ISSUER and TEST_SQS_ENDPOINT are required")
 	}
 
-	ctx, cancel := context.WithTimeout(t.Context(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), timeout)
 	t.Cleanup(cancel)
 
 	suffix, err := uuid.NewRandom()

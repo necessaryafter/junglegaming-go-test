@@ -25,3 +25,12 @@ um processo na chamada de delete, depois de conferir o commit por outra conexão
 Outro processo recebe a mesma mensagem após a expiração de visibilidade do SQS e
 a remove após reconhecer o replay. Carteira, transações, ledger, inbox e snapshots
 da outbox permanecem iguais, incluindo IDs e payloads dos eventos.
+
+## Mensagens inválidas e redrive
+
+Entradas rejeitadas antes do caso de uso não são marcadas como concluídas na inbox.
+O consumidor mantém a mensagem, aplica backoff de visibilidade e deixa o broker
+movê-la para a DLQ após o limite configurado de cinco recebimentos. O
+[teste de redrive](../../internal/wagering/worker/dlq_integration_test.go) comprova esse caminho para um envelope com
+campo desconhecido: corpo e atributo de credencial são preservados na DLQ, sem
+alterações em carteira, transações, ledger, inbox ou eventos.
