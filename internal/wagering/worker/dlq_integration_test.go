@@ -54,10 +54,11 @@ type retryObservation struct {
 }
 
 type redriveScenario struct {
-	unknownField bool
-	credential   func(*testing.T, string) string
-	wantProvider string // Empty means authentication must fail before authorization.
-	reason       string
+	failLedgerWrites bool
+	unknownField     bool
+	credential       func(*testing.T, string) string
+	wantProvider     string // Empty means authentication must fail before authorization.
+	reason           string
 }
 
 func TestInvalidMessageReachesDLQ(t *testing.T) {
@@ -66,6 +67,15 @@ func TestInvalidMessageReachesDLQ(t *testing.T) {
 		credential:   recoveryToken,
 		wantProvider: "provider-a",
 		reason:       "invalid_request",
+	})
+}
+
+func TestDatabaseFailureRedriveAndRecovery(t *testing.T) {
+	testMessageRedrive(t, redriveScenario{
+		failLedgerWrites: true,
+		credential:       recoveryToken,
+		wantProvider:     "provider-a",
+		reason:           "unavailable",
 	})
 }
 
@@ -225,6 +235,10 @@ func testMessageRedrive(t *testing.T, scenario redriveScenario) {
 
 	before := publicationFinancialSnapshot(t, fixture.pool, state.ID)
 
+	if scenario.failLedgerWrites {
+		injectLedgerFailure(t, fixture)
+	}
+
 	sent, err := fixture.broker.SendMessage(ctx, &sqs.SendMessageInput{
 		QueueUrl:               aws.String(fixture.requestsURL),
 		MessageBody:            aws.String(string(body)),
@@ -279,6 +293,10 @@ func testMessageRedrive(t *testing.T, scenario redriveScenario) {
 		wantDelay := int32(1 << count)
 		if released.delay != wantDelay {
 			t.Fatalf("retry delay = %d; want %d", released.delay, wantDelay)
+		}
+
+		if scenario.failLedgerWrites {
+			assertLedgerFailures(t, fixture, count)
 		}
 
 		current := publicationFinancialSnapshot(t, fixture.pool, state.ID)
@@ -398,6 +416,9 @@ func testMessageRedrive(t *testing.T, scenario redriveScenario) {
 		t.Fatal("dead-lettered message remained in the source queue")
 	}
 
+	if scenario.failLedgerWrites {
+		recoverDeadLetter(t, fixture, dlqURL, deadLetter, envelope, store, verifier)
+	}
 }
 
 func assertProvisionedRedrive(t *testing.T, fixture recoveryFixture) {

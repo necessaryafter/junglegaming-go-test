@@ -34,3 +34,14 @@ movê-la para a DLQ após o limite configurado de cinco recebimentos. O
 [teste de redrive](../../internal/wagering/worker/dlq_integration_test.go) comprova esse caminho para um envelope com
 campo desconhecido: corpo e atributo de credencial são preservados na DLQ, sem
 alterações em carteira, transações, ledger, inbox ou eventos.
+
+## Reprocessamento após falha de escrita
+
+O [teste de recuperação do banco após DLQ](../../internal/wagering/worker/database_recovery_integration_test.go) provoca
+um erro PostgreSQL após o INSERT do ledger. A transação inteira faz rollback,
+incluindo carteira, operação e inbox, e a mensagem chega à DLQ após cinco tentativas.
+Após remover a falha, o mesmo corpo e credencial são reenviados com outro ID de
+deduplicação do transporte. A cópia na DLQ só é removida após verificar o commit.
+Outro processo recebe uma duplicata real e reconhece o replay persistido, sem
+novos movimentos ou eventos. Esgotar retries não transforma uma indisponibilidade
+recuperável em falha financeira definitiva nem exige persistir FAILED.

@@ -109,8 +109,14 @@ func TestConsumerRecoveryProcess(t *testing.T) {
 		t.Fatal("consumer escaped the delete failpoint")
 	}
 
-	if metrics.Duplicates.Load() != 1 {
-		t.Fatalf("recovered consumer saw %d replays; want 1", metrics.Duplicates.Load())
+	wantReplays := uint64(1)
+
+	if mode == "reprocess" {
+		wantReplays = 0
+	}
+
+	if metrics.Duplicates.Load() != wantReplays {
+		t.Fatalf("consumer saw %d replays; want %d", metrics.Duplicates.Load(), wantReplays)
 	}
 
 	if metrics.Retries.Load() != 0 {
