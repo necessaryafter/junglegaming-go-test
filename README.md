@@ -194,6 +194,8 @@ Os testes criam schemas PostgreSQL e filas SQS exclusivos e os removem ao termin
 
 A suíte cobre 50 recebimentos concorrentes, duas apostas de 80 sobre saldo 100, três pools independentes, replay do resultado original, conflitos de payload e inbox, isolamento de provedores, referência pendente, proteção do ledger, paginação, lease abandonado e migrations up/down. Também inicia e encerra a composição Fx com os três serviços reais e comprova a recepção de uma duplicata por HTTP e SQS.
 
+A [matriz de reversões e referências](docs/matriz-reversoes.md) detalha os cenários adicionais e o comando para executá-los isoladamente.
+
 Para executar três processos independentes:
 
 ```sh

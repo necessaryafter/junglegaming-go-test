@@ -7,7 +7,6 @@ import (
 
 	"jungle/internal/wagering/domain/money"
 	"jungle/internal/wagering/domain/wager"
-	"jungle/internal/wagering/domain/wallet"
 )
 
 func input(t *testing.T, kind wager.Kind, amount string) wager.Input {
@@ -119,35 +118,5 @@ func TestTransitions(t *testing.T) {
 				t.Fatalf("terminal transition error = %v", err)
 			}
 		})
-	}
-}
-
-func TestReferenceDirection(t *testing.T) {
-	original := wager.Snapshot{ID: "original", Status: wager.Processed, Input: input(t, wager.Bet, "1.00")}
-	original.Input.ExternalTransactionID = "original"
-	request := input(t, wager.Refund, "1.00")
-	request.ReferenceExternalTransactionID = "original"
-
-	direction, code := request.ReferenceDirection(&original)
-	if direction != wallet.Credit || code != "" {
-		t.Fatalf("refund = %q, %q", direction, code)
-	}
-
-	if _, code := request.ReferenceDirection(nil); code != "REFERENCE_PENDING" {
-		t.Fatalf("missing reference code = %q", code)
-	}
-
-	original.Input.RoundID = "another"
-	if _, code := request.ReferenceDirection(&original); code != "REFERENCE_MISMATCH" {
-		t.Fatalf("reference mismatch code = %q", code)
-	}
-
-	request = input(t, wager.Rollback, "1.00")
-	request.ReferenceExternalTransactionID = "original"
-	original.Input = input(t, wager.Win, "1.00")
-	original.Input.ExternalTransactionID = "original"
-
-	if direction, code := request.ReferenceDirection(&original); direction != wallet.Debit || code != "" {
-		t.Fatalf("win rollback = %q, %q", direction, code)
 	}
 }

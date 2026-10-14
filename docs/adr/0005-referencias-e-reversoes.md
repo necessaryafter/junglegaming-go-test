@@ -18,3 +18,17 @@ Persistir a espera permite receber mensagens fora de ordem e continuar após
 um reinício. Limitar cada referência a uma reversão impede devoluções repetidas
 por ciclos de refund e rollback. A rejeição persistida mantém o resultado de replays;
 corrigir a operação exige outro ID externo e outra chave.
+
+## Verificação e detalhes do prazo
+
+A [matriz de reversões](../matriz-reversoes.md) cobre as regras no domínio e
+seus efeitos duráveis no PostgreSQL, incluindo disputas entre pools independentes.
+Uma reversão rejeitada não ocupa a vaga da referência; uma nova operação pode
+ser processada depois de recompor o saldo. O replay da rejeição permanece rejeitado.
+
+O prazo de 24 horas é contado desde a criação da operação que aguarda referência.
+No retry, se a referência continuar ausente ou pendente após esse prazo, a operação
+é rejeitada com `REFERENCE_NOT_FOUND`. Se já estiver processada quando o worker
+retomar, a operação é avaliada normalmente, mesmo após 24 horas. Uma referência
+rejeitada ou falha resulta em `REFERENCE_UNSUCCESSFUL`. Uma rejeição por expiração
+não é reaberta quando a referência chega depois.
