@@ -1,0 +1,6 @@
+.git
+.idea
+.env
+bin
+coverage.out
+*.test
