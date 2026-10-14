@@ -260,11 +260,21 @@ func TestConsumerRecoversAfterCommitBeforeDelete(t *testing.T) {
 func recoveryToken(t *testing.T, issuer string) string {
 	t.Helper()
 
+	return recoveryProviderToken(t, issuer, "provider-a")
+}
+
+func recoveryProviderToken(
+	t *testing.T,
+	issuer string,
+	clientID string,
+) string {
+	t.Helper()
+
 	client := &http.Client{Timeout: 5 * time.Second}
 	response, err := client.PostForm(issuer+"/protocol/openid-connect/token", url.Values{
 		"grant_type":    {"client_credentials"},
-		"client_id":     {"provider-a"},
-		"client_secret": {"provider-a-local-secret"},
+		"client_id":     {clientID},
+		"client_secret": {clientID + "-local-secret"},
 	})
 	if err != nil {
 		t.Fatal(err)

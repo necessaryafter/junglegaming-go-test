@@ -5,6 +5,7 @@ package worker
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -66,6 +67,57 @@ func TestInvalidMessageReachesDLQ(t *testing.T) {
 		wantProvider: "provider-a",
 		reason:       "invalid_request",
 	})
+}
+
+func TestUnauthorizedMessageReachesDLQ(t *testing.T) {
+	tests := []struct {
+		name         string
+		credential   func(*testing.T, string) string
+		wantProvider string
+	}{
+		{name: "missing credential"},
+		{name: "invalid signature", credential: tamperedRecoveryToken},
+		{
+			name: "another provider",
+			credential: func(t *testing.T, issuer string) string {
+				return recoveryProviderToken(t, issuer, "provider-b")
+			},
+			wantProvider: "provider-b",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testMessageRedrive(t, redriveScenario{
+				credential:   tt.credential,
+				wantProvider: tt.wantProvider,
+				reason:       "unauthorized",
+			})
+		})
+	}
+}
+
+func tamperedRecoveryToken(t *testing.T, issuer string) string {
+	t.Helper()
+
+	parts := strings.Split(recoveryToken(t, issuer), ".")
+	if len(parts) != 3 {
+		t.Fatal("IdP did not return a compact JWT")
+	}
+
+	signature, err := base64.RawURLEncoding.DecodeString(parts[2])
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(signature) == 0 {
+		t.Fatal("IdP returned an unsigned token")
+	}
+
+	signature[0] ^= 1
+	parts[2] = base64.RawURLEncoding.EncodeToString(signature)
+
+	return strings.Join(parts, ".")
 }
 
 func testMessageRedrive(t *testing.T, scenario redriveScenario) {
