@@ -31,3 +31,13 @@ durante a chamada de rede.
 
 Uma reivindicação abandonada não prova que houve uma falha de publicação.
 Separar os contadores evita tratar quedas de processo como erros de envio.
+
+## Verificação de interrupções
+
+Os [testes de recuperação do publisher](../../internal/wagering/worker/publisher_recovery_integration_test.go) interrompem
+um processo após o claim, antes do envio, e após o SQS aceitar a mensagem, antes
+da confirmação SQL. Outro processo retoma após expirar o lease e preserva o ID,
+payload, grupo FIFO e chave de deduplicação. A outbox termina publicada, com duas
+reivindicações e nenhuma falha de envio confirmada. O estado financeiro permanece
+igual. Na segunda janela, o teste observa as duas chamadas aceitas pelo SQS;
+a deduplicação FIFO pode evitar uma segunda entrega visível ao consumidor.
