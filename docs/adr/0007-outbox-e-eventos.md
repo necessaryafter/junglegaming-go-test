@@ -41,3 +41,12 @@ payload, grupo FIFO e chave de deduplicação. A outbox termina publicada, com d
 reivindicações e nenhuma falha de envio confirmada. O estado financeiro permanece
 igual. Na segunda janela, o teste observa as duas chamadas aceitas pelo SQS;
 a deduplicação FIFO pode evitar uma segunda entrega visível ao consumidor.
+
+## Disputa com três aplicações completas
+
+A [matriz entre processos](../../internal/app/cluster_recovery_integration_test.go)
+mantém três composições Fx simultâneas e encerra o publisher que chega primeiro
+à janela de interrupção. Um dos dois sobreviventes retoma após expirar o lease
+de 20 segundos configurado para o teste. O processo interrompido é reiniciado
+somente depois da retomada, comprovando que a recuperação não depende de sua
+memória nem de sua disponibilidade.

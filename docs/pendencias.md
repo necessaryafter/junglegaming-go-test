@@ -10,15 +10,19 @@ A base está funcional, mas ainda não conclui o desafio. As decisões estão no
 - Integração real: PostgreSQL, IdP e SQS; migrations; composição e start/stop do Fx; cruzamento HTTP/SQS.
 - Concorrência: 50 duplicatas, disputa de saldo, três pools independentes e outbox concorrente/abandonada.
 - Matriz de reversões e referências: tipos permitidos, identidade, valores, duplicidade, concorrência, saldo insuficiente, replay, backoff e expiração. Veja a [cobertura detalhada](matriz-reversoes.md).
+- Recuperação do consumidor após commit e antes de delete: processo encerrado à força, expiração real de visibilidade e replay em outro processo, sem novos efeitos financeiros. Veja o [cenário reproduzível](recuperacao-consumidor.md).
+- Recuperação do publisher antes do envio e após aceite pelo SQS, antes da confirmação SQL: queda forçada, expiração real do lease e retomada em outro processo, preservando evento e estado financeiro. Veja os [cenários reproduzíveis](recuperacao-publisher.md).
+- Mensagem com campo desconhecido chega à DLQ após cinco recebimentos reais, com backoff de produção, sem alteração financeira nem conclusão da inbox. Provisionamento de redrive também conferido; veja o [cenário reproduzível](redrive-dlq.md).
+- Mensagens sem AccessToken, com assinatura inválida e com token legítimo de outro provedor chegam à DLQ, sem efeitos financeiros ou conclusão da inbox, preservando o atributo de credencial quando presente. Cobertura na [matriz de redrive](redrive-dlq.md).
+- Falha persistente de escrita no PostgreSQL: cinco rollbacks completos até a DLQ, remoção da falha e reprocessamento em outro processo, seguido de duplicata recebida pela aplicação sem novo débito. Veja o [cenário de recuperação](recuperacao-banco-dlq.md).
+- Três aplicações Fx simultâneas: concorrência financeira, isolamento entre carteiras, reentrega HTTP/SQS, disputa da outbox, retomada e expiração de referências, DLQ e reprocessamento após restart. Veja a [matriz de três processos](recuperacao-tres-processos.md).
 - O perfil `replicas` e `scripts/concurrency.py` exercitam três processos por HTTP, com reconciliação final.
 
-Três pools de conexão não substituem a verificação de falhas entre três processos.
+A matriz automatizada confere três PIDs distintos, prontidão das aplicações e três pools identificados separadamente no PostgreSQL.
 
-## O que falta verificar
-
-- Matriz completa de recuperação com três processos independentes.
-- Failpoints determinísticos entre commit e remoção da mensagem, e antes/depois do envio da outbox.
-- Redrive/DLQ e recuperação de todos os cenários após restart.
+Os cenários de recuperação e restart da matriz estão automatizados com
+infraestrutura real. A cobertura e os limites estão descritos na
+[matriz de três processos](recuperacao-tres-processos.md).
 
 ## Limitações atuais
 

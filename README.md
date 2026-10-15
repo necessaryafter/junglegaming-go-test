@@ -195,6 +195,10 @@ Redrive após cinco recebimentos; visibility timeout de 60 segundos; retenção 
 
 Use o envelope de `DESAFIO.md` com `data.idempotencyKey`. Nesta base, a mensagem precisa também do atributo SQS `AccessToken`, do tipo `String`, contendo um token válido do provedor. O consumidor valida esse token antes de chamar o mesmo caso de uso do HTTP. Tokens expirados na entrega levam a retry/DLQ; a estratégia final de identidade durável de produtores ainda precisa ser definida.
 
+A [matriz de redrive e autorização](docs/redrive-dlq.md) cobre envelope inválido, credencial ausente, assinatura inválida e token legítimo de outro provedor. Comprova os cinco recebimentos, os delays de retry e a chegada à DLQ sem efeitos financeiros. Cada cenário leva aproximadamente um minuto por usar o backoff real.
+
+O [teste de recuperação do banco após DLQ](docs/recuperacao-banco-dlq.md) injeta uma falha após a escrita do ledger, comprova o rollback em cinco tentativas e reprocessa a mensagem após remover a falha. Uma nova duplicata comprova que a aplicação preserva o resultado sem outro débito.
+
 Para publicar pela AWS CLI:
 
 ```sh
@@ -259,9 +263,9 @@ APIs em `8081`, `8082` e `8083`, com conexões e memória próprias. Para demons
 python3 scripts/concurrency.py
 ```
 
-O script usa apenas a biblioteca padrão do Python, cria duas carteiras locais de teste com IDs aleatórios e preserva seu histórico financeiro. Verifica 50 duplicatas, duas apostas concorrentes de 80, um único débito por carteira, saldo final de 20 e reconciliação. `TEST_API_URLS` permite configurar URLs separadas por vírgula; `TEST_OIDC_ISSUER` configura o IdP. A matriz completa de falhas com três processos ainda está pendente.
+O script usa apenas a biblioteca padrão do Python, cria duas carteiras locais de teste com IDs aleatórios e preserva seu histórico financeiro. Verifica 50 duplicatas, duas apostas concorrentes de 80, um único débito por carteira, saldo final de 20 e reconciliação. `TEST_API_URLS` permite configurar URLs separadas por vírgula; `TEST_OIDC_ISSUER` configura o IdP. A [matriz automatizada de recuperação com três processos](docs/recuperacao-tres-processos.md) inicia subprocessos Fx independentes, injeta quedas e confere o estado após restart.
 
-Para uma simulação manual, pare uma instância com `docker compose kill app-2`, acompanhe a recuperação da outbox e referências por outra instância, e reinicie com `docker compose up -d app-2`. Não há failpoints determinísticos para as janelas entre commit, delete e publicação.
+Para uma simulação manual, pare uma instância com `docker compose kill app-2`, acompanhe a recuperação da outbox e referências por outra instância, e reinicie com `docker compose up -d app-2`. O [teste de recuperação do consumidor](docs/recuperacao-consumidor.md) cobre a queda entre commit e delete com dois processos independentes. Os [testes de recuperação do publisher](docs/recuperacao-publisher.md) cobrem interrupções antes do envio e após o aceite pelo SQS, antes da confirmação SQL.
 
 ## Encerramento
 

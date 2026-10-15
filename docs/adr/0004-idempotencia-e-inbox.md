@@ -45,3 +45,13 @@ deduplicação do transporte. A cópia na DLQ só é removida após verificar o 
 Outro processo recebe uma duplicata real e reconhece o replay persistido, sem
 novos movimentos ou eventos. Esgotar retries não transforma uma indisponibilidade
 recuperável em falha financeira definitiva nem exige persistir FAILED.
+
+## Reinício de três aplicações
+
+A [matriz de restart](../../internal/app/cluster_rejected_integration_test.go)
+substitui três aplicações depois de receber mensagens inválidas ou sem autorização.
+O contador de recebimentos pertence ao SQS e não reinicia com a aplicação; chamadas
+em andamento podem ser abandonadas antes de sua resposta ser observada.
+A [recuperação do banco](../../internal/app/cluster_pending_integration_test.go)
+retoma uma mensagem da DLQ com outro grupo de processos e confere duplicatas por
+HTTP e SQS, preservando saldo, ledger, inbox e os dados imutáveis dos eventos.

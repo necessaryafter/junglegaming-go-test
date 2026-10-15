@@ -219,6 +219,13 @@ The example illustrates spacing; `parseMinorUnits` is a placeholder, not a requi
 
 - Define transaction boundaries around invariants that must change atomically.
 - Use parameterized queries and avoid concatenating untrusted input into SQL.
+- Keep nontrivial SQL in a descriptively named local constant, separate from the
+  database call. Format clauses on separate lines and put each selected column
+  on its own line. Indent nested queries and leave spaces after commas and around
+  comparison operators. Keep short, obvious queries inline when they remain readable.
+- Keep the selected-column order and `Scan` destinations easy to compare; split
+  long `Scan` calls into one destination per line. Apply the same SQL readability
+  rules to integration tests.
 - Use database constraints as a final defense for uniqueness, foreign keys, and other durable invariants.
 - For concurrent writes, use the appropriate locking, conditional updates, uniqueness constraints, or isolation semantics and verify affected rows.
 - Make idempotency persistent when operations may be retried or redelivered across instances.

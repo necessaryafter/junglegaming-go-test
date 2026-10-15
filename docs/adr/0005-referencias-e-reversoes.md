@@ -32,3 +32,12 @@ No retry, se a referência continuar ausente ou pendente após esse prazo, a ope
 retomar, a operação é avaliada normalmente, mesmo após 24 horas. Uma referência
 rejeitada ou falha resulta em `REFERENCE_UNSUCCESSFUL`. Uma rejeição por expiração
 não é reaberta quando a referência chega depois.
+
+## Retomada entre três aplicações
+
+Os [testes de restart](../../internal/app/cluster_recovery_integration_test.go)
+substituem as três aplicações enquanto REFUND ou ROLLBACK aguarda uma BET. O
+worker do novo grupo resolve a referência, e outra substituição preserva o replay.
+Os [testes de expiração](../../internal/app/cluster_pending_integration_test.go)
+retomam fixtures históricas depois do restart e rejeitam referências vencidas.
+Uma BET recebida depois não reabre a reversão, e o replay conserva o saldo original.
