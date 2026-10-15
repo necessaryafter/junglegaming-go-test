@@ -1,0 +1,1 @@
+ALTER TABLE wager_transactions DROP CONSTRAINT transaction_failed_policy;

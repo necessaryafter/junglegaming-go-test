@@ -104,6 +104,10 @@ func TestTransitions(t *testing.T) {
 				code = "FAILURE"
 			}
 
+			if terminal == wager.Failed {
+				code = wager.InfrastructureDataLoss
+			}
+
 			finished, err := transaction.Transition(terminal, request.Money, code, "", now)
 			if err != nil {
 				t.Fatal(err)

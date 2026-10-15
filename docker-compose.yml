@@ -5,7 +5,7 @@ x-app: &app
   environment:
     HTTP_ADDRESS: :8081
     OUTBOX_LEASE_DURATION: ${OUTBOX_LEASE_DURATION:-60s}
-    DATABASE_URL: postgres://jungle:${POSTGRES_PASSWORD:-jungle-local}@postgres:5432/jungle?sslmode=disable
+    DATABASE_URL: postgres://jungle_runtime:${POSTGRES_RUNTIME_PASSWORD:-jungle-runtime-local}@postgres:5432/jungle?sslmode=disable
     OIDC_ISSUER: http://localhost:${KEYCLOAK_PORT:-8080}/realms/jungle
     OIDC_JWKS_URL: http://keycloak:8080/realms/jungle/protocol/openid-connect/certs
     OIDC_AUDIENCE: jungle-api
@@ -14,7 +14,7 @@ x-app: &app
     AWS_SECRET_ACCESS_KEY: test
     SQS_ENDPOINT: http://localstack:4566
   depends_on:
-    migrate:
+    db-grants:
       condition: service_completed_successfully
     keycloak:
       condition: service_healthy
@@ -51,10 +51,40 @@ services:
     entrypoint: ["migrate"]
     command: ["up"]
     environment:
-      DATABASE_URL: postgres://jungle:${POSTGRES_PASSWORD:-jungle-local}@postgres:5432/jungle?sslmode=disable
+      MIGRATION_DATABASE_URL: postgres://jungle_migrator:${POSTGRES_MIGRATION_PASSWORD:-jungle-migration-local}@postgres:5432/jungle?sslmode=disable
+    depends_on:
+      db-roles:
+        condition: service_completed_successfully
+
+  db-roles:
+    image: docker.io/library/postgres:17.2-alpine
+    entrypoint: ["psql", "--no-psqlrc", "--set=ON_ERROR_STOP=1", "--file=/opt/jungle/bootstrap.psql"]
+    environment:
+      PGHOST: postgres
+      PGDATABASE: jungle
+      PGUSER: jungle
+      PGPASSWORD: ${POSTGRES_PASSWORD:-jungle-local}
+      POSTGRES_MIGRATION_PASSWORD: ${POSTGRES_MIGRATION_PASSWORD:-jungle-migration-local}
+      POSTGRES_RUNTIME_PASSWORD: ${POSTGRES_RUNTIME_PASSWORD:-jungle-runtime-local}
+    volumes:
+      - ./docker/postgres:/opt/jungle:ro
     depends_on:
       postgres:
         condition: service_healthy
+
+  db-grants:
+    image: docker.io/library/postgres:17.2-alpine
+    entrypoint: ["psql", "--no-psqlrc", "--set=ON_ERROR_STOP=1", "--file=/opt/jungle/grants.psql"]
+    environment:
+      PGHOST: postgres
+      PGDATABASE: jungle
+      PGUSER: jungle_migrator
+      PGPASSWORD: ${POSTGRES_MIGRATION_PASSWORD:-jungle-migration-local}
+    volumes:
+      - ./docker/postgres:/opt/jungle:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 
   postgres:
     image: docker.io/library/postgres:17.2-alpine

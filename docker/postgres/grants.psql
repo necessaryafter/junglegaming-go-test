@@ -1,0 +1,2 @@
+SELECT set_config('jungle.runtime_role', 'jungle_runtime', false) AS runtime_role \gset
+\ir runtime.sql

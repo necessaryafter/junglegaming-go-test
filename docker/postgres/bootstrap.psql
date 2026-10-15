@@ -1,0 +1,7 @@
+\getenv migration_password POSTGRES_MIGRATION_PASSWORD
+\getenv runtime_password POSTGRES_RUNTIME_PASSWORD
+SELECT set_config('jungle.migration_role', 'jungle_migrator', false) AS migration_role \gset
+SELECT set_config('jungle.runtime_role', 'jungle_runtime', false) AS runtime_role \gset
+SELECT set_config('jungle.migration_password', :'migration_password', false) AS migration_password \gset
+SELECT set_config('jungle.runtime_password', :'runtime_password', false) AS runtime_password \gset
+\ir roles.sql

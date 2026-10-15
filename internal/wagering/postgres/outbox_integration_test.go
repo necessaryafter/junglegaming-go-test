@@ -226,7 +226,7 @@ func TestOutboxMigrationPreservesClaimHistory(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := connection.Exec(t.Context(), "INSERT INTO schema_migrations(version) VALUES(1)"); err != nil {
+	if _, err := connection.Exec(t.Context(), "INSERT INTO schema_migrations(version, dirty) VALUES(1, false)"); err != nil {
 		t.Fatal(err)
 	}
 

@@ -20,14 +20,14 @@ func main() {
 }
 
 func run() (err error) {
-	if len(os.Args) != 2 || os.Getenv("DATABASE_URL") == "" {
-		return errors.New("usage: DATABASE_URL=... migrate up|down")
+	if len(os.Args) != 2 || os.Getenv("MIGRATION_DATABASE_URL") == "" {
+		return errors.New("usage: MIGRATION_DATABASE_URL=... migrate up|down")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	connection, err := pgx.Connect(ctx, os.Getenv("DATABASE_URL"))
+	connection, err := pgx.Connect(ctx, os.Getenv("MIGRATION_DATABASE_URL"))
 	if err != nil {
 		return err
 	}

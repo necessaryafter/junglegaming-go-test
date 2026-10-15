@@ -11,6 +11,9 @@ As decisões estão registradas em ADRs curtas, com a decisão e seu motivo.
 - [0007 - Outbox com entrega pelo menos uma vez](docs/adr/0007-outbox-e-eventos.md)
 - [0008 - Composição e ciclo de vida com Fx](docs/adr/0008-fx-e-ciclo-de-vida.md)
 - [0009 - Diagnóstico e reconciliação](docs/adr/0009-observabilidade-e-reconciliacao.md)
+- [0010 - Falhas permanentes e estado FAILED](docs/adr/0010-falhas-permanentes.md)
+- [0011 - Migrations com golang-migrate](docs/adr/0011-migrations.md)
+- [0012 - Permissões do banco por responsabilidade](docs/adr/0012-permissoes-do-banco.md)
 
 A base integrada ainda não conclui todos os critérios do desafio.
 Veja [limitações e verificações pendentes](docs/pendencias.md).

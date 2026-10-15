@@ -33,7 +33,7 @@ Cada módulo registra seus construtores e ciclo de vida com Fx. `app` monta o pr
 
 ## Inicialização
 
-Pré-requisitos: Go **1.27.1** para desenvolvimento e Docker com Compose v2. Podman com `podman-compose` também pode ser usado, substituindo os comandos de containers.
+Pré-requisitos: Go **1.27.1** para desenvolvimento e Docker com Compose v2. Para Podman com `podman-compose`, use a sequência explícita descrita abaixo.
 
 ```sh
 cp .env.example .env
@@ -42,31 +42,54 @@ docker compose ps
 curl --fail http://localhost:8081/health/ready
 ```
 
-O Compose executa a migration antes da API. PostgreSQL e Keycloak usam volumes persistentes; o LocalStack recria as filas ao iniciar e não mantém mensagens entre reinícios. As portas publicadas ficam restritas a `127.0.0.1`.
+Algumas versões do Podman falham ao iniciar dependências que já terminaram com sucesso. Nesse caso, execute o provisionamento sequencialmente, aguardando PostgreSQL, Keycloak e LocalStack ficarem saudáveis antes de iniciar a API:
+
+```sh
+podman-compose up -d postgres keycloak-db keycloak localstack
+podman-compose build migrate app
+podman-compose run --rm --no-deps -T db-roles
+podman-compose run --rm --no-deps -T migrate up
+podman-compose run --rm --no-deps -T db-grants
+podman-compose up --no-deps -d app
+```
+
+O Compose provisiona os papéis do banco (`db-roles`), executa as migrations (`migrate`) e aplica as permissões de runtime (`db-grants`) antes da API. PostgreSQL e Keycloak usam volumes persistentes; o LocalStack recria as filas ao iniciar e não mantém mensagens entre reinícios. As portas publicadas ficam restritas a `127.0.0.1`.
 
 | Serviço | Endereço local |
 | --- | --- |
 | API | `http://localhost:8081` |
 | Keycloak | `http://localhost:8080`, console `admin` / `admin-local` |
-| PostgreSQL | `localhost:5432`, banco/usuário `jungle`, senha `jungle-local` |
+| PostgreSQL | `localhost:5432`, banco `jungle`; credenciais separadas abaixo |
 | SQS/LocalStack | `http://localhost:4566`, região `us-east-1`, credenciais `test` / `test` |
 
 Esses valores são exemplos de desenvolvimento. Variáveis de infraestrutura e aplicação estão em `.env.example`. O Compose lê `.env`; `go run` exige exportar as variáveis no shell.
+
+| Papel PostgreSQL | Usuário | Senha local | Uso |
+| --- | --- | --- | --- |
+| Administrador | `jungle` | `jungle-local` | Provisionamento e fixtures de integração |
+| Migrations | `jungle_migrator` | `jungle-migration-local` | Proprietário do schema, tabelas e funções |
+| Runtime | `jungle_runtime` | `jungle-runtime-local` | API e workers, com DML restrito |
+
+O runtime usa `DATABASE_URL`; o comando de migrations exige `MIGRATION_DATABASE_URL` e não usa a credencial de runtime como fallback. O container da aplicação recebe somente a credencial de runtime. As senhas de provisionamento são configuradas separadamente por `POSTGRES_PASSWORD`, `POSTGRES_MIGRATION_PASSWORD` e `POSTGRES_RUNTIME_PASSWORD`.
 
 Para executar a aplicação no host:
 
 ```sh
 docker compose up -d postgres keycloak-db keycloak localstack
+docker compose run --rm db-roles
 set -a
 . ./.env
 set +a
 go run ./cmd/migrate up
+docker compose run --rm --no-deps db-grants
 go run ./cmd/jungle
 ```
 
 `OIDC_ISSUER` deve coincidir exatamente com o `iss` do token. `OIDC_JWKS_URL` permite buscar as chaves pelo endereço interno do Keycloak dentro do Compose, mantendo o issuer público. A configuração atual usa o endpoint de chaves do Keycloak; outros IdPs exigem configurar sua URL JWKS. Não há modo de autenticação desabilitada.
 
 ## Migrations
+
+Exporte `MIGRATION_DATABASE_URL` antes de executar no host:
 
 ```sh
 go run ./cmd/migrate up
@@ -77,12 +100,33 @@ Ou, com containers:
 
 ```sh
 docker compose run --rm migrate up
+docker compose run --rm --no-deps db-grants
 docker compose run --rm migrate down
 ```
 
-`down` apaga as tabelas financeiras, inbox e outbox; use apenas quando quiser remover esses dados. O runner embarca o SQL versionado, registra cada versão e aplica todas as versões pendentes em ordem, com advisory lock. `down` reverte todas as versões aplicadas em ordem inversa. A aplicação não migra o banco implicitamente.
+`down` apaga as tabelas financeiras, inbox e outbox; use apenas quando quiser remover esses dados. O comando usa [golang-migrate](https://github.com/golang-migrate/migrate), com SQL embarcado via `iofs` e driver PostgreSQL `pgx/v5`. `up` aplica todas as versões pendentes e `down` reverte todas as versões aplicadas, com advisory lock gerenciado pela biblioteca. Cada arquivo SQL é atômico; o conjunto de arquivos não forma uma única transação. A aplicação não migra o banco implicitamente.
+
+O primeiro uso converte atomicamente o histórico do runner anterior para o formato `(version, dirty)`, preservando a última versão aplicada e os dados financeiros. Execute a atualização com um único tipo de executável de migrations; não rode o runner antigo e o novo simultaneamente. Uma falha deixa a versão marcada como `dirty` e bloqueia novas execuções. Investigue o SQL e o estado do banco antes de corrigir o histórico; o comando não executa `force` automaticamente. Veja a [decisão sobre migrations](docs/adr/0011-migrations.md).
 
 A migration `000002_outbox_attempts` preserva o contador anterior como `processing_attempts` e acrescenta `publication_failures`, iniciado em zero. Execute `up` para atualizar bancos existentes antes de iniciar a nova aplicação; o Compose faz isso pelo serviço `migrate`.
+
+A migration `000003_failed_policy` restringe `FAILED` ao código `INFRASTRUCTURE_DATA_LOSS`. Domínio e banco rejeitam outros motivos nesse estado. Timeout, indisponibilidade, erro de constraint e esgotamento de retries não justificam `FAILED`; a [política completa](docs/adr/0010-falhas-permanentes.md) define os critérios e os limites do fluxo atual. Se houver registros `FAILED` antigos com outros códigos, a migration falha para exigir investigação, sem reclassificá-los automaticamente.
+
+### Permissões e atualização de volumes existentes
+
+O runtime recebe `SELECT/INSERT/UPDATE` em carteiras, transações, inbox e outbox; `SELECT/INSERT` no ledger; e apenas `SELECT` no histórico de migrations. Ele não é proprietário, superuser nem membro de outros papéis. Não recebe `CREATE`, `TEMPORARY`, `TRIGGER`, `DELETE`, `TRUNCATE` ou permissão para alterar `session_replication_role`. O migrator é proprietário do schema e dos objetos financeiros, mas também não é superuser. As permissões são explícitas: novas tabelas e funções não ficam acessíveis automaticamente ao runtime.
+
+Para atualizar um volume criado com a credencial única anterior, atualize `.env` conforme `.env.example`, inclusive `DATABASE_URL` para `jungle_runtime` e `MIGRATION_DATABASE_URL` para `jungle_migrator`, e execute:
+
+```sh
+docker compose stop app app-2 app-3
+docker compose run --rm db-roles
+docker compose run --rm migrate up
+docker compose run --rm --no-deps db-grants
+docker compose up --build -d app
+```
+
+`db-roles` transfere somente o schema e os objetos conhecidos do serviço para o migrator, preservando os dados. A execução é idempotente e também funciona em banco vazio. Não remova o volume para atualizar. Se usar o perfil `replicas`, reinicie também `app-2` e `app-3`. O provisionamento pressupõe um banco dedicado ao serviço; revoga acessos de `PUBLIC` ao banco e ao schema. Papéis com memberships inesperadas provocam erro, para exigir revisão administrativa. Veja a [decisão sobre permissões](docs/adr/0012-permissoes-do-banco.md).
 
 ## Autenticação e chamadas
 
@@ -190,7 +234,14 @@ TEST_SQS_ENDPOINT='http://localhost:4566' \
 go test -tags=integration -race ./... -count=1
 ```
 
-Os testes criam schemas PostgreSQL e filas SQS exclusivos e os removem ao terminar. O usuário do banco de teste precisa poder criar schemas. Sem as variáveis `TEST_*`, os testes de integração são pulados explicitamente.
+Os testes criam schemas PostgreSQL e filas SQS exclusivos e os removem ao terminar. O teste de separação de permissões também cria bancos e papéis exclusivos, conecta como migrator e runtime reais e os remove ao terminar. `TEST_DATABASE_URL` deve usar um administrador do ambiente de testes, com permissão para criar esses recursos; não use a credencial de runtime nessa variável. Sem as variáveis `TEST_*`, os testes de integração são pulados explicitamente.
+
+Para verificar somente as permissões com PostgreSQL real:
+
+```sh
+TEST_DATABASE_URL='postgres://jungle:jungle-local@localhost:5432/jungle?sslmode=disable' \
+go test -tags=integration -race ./internal/wagering/postgres -run '^TestDatabaseRoleSeparation$' -count=1
+```
 
 A suíte cobre 50 recebimentos concorrentes, duas apostas de 80 sobre saldo 100, três pools independentes, replay do resultado original, conflitos de payload e inbox, isolamento de provedores, referência pendente, proteção do ledger, paginação, lease abandonado e migrations up/down. Também inicia e encerra a composição Fx com os três serviços reais e comprova a recepção de uma duplicata por HTTP e SQS.
 

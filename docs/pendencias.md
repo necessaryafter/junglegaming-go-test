@@ -24,10 +24,14 @@ Três pools de conexão não substituem a verificação de falhas entre três pr
 
 - SQS usa token de curta duração na mensagem e credenciais locais compartilhadas.
   Falta identidade durável de origem e demonstração de políticas segregadas por produtor.
-- O modelo admite `FAILED`, mas não há política automática para persistir falhas
-  permanentes de infraestrutura. Falhas transitórias fazem rollback/503 ou retry;
-  mensagens inválidas ou sem autorização seguem retry/redrive.
+- A [política de `FAILED`](adr/0010-falhas-permanentes.md) restringe esse estado a
+  perda irrecuperável de dados confirmada operacionalmente. O fluxo atual não tem
+  classificador automático nem ferramenta administrativa para registrar essa decisão.
+  Falhas recuperáveis fazem rollback/503 ou retry; mensagens inválidas ou sem
+  autorização seguem retry/redrive.
 - Faltam histogramas, métricas completas de SQS/DLQ e conflitos, dashboards e tracing.
 - As validações financeiras no banco agregam dados por carteira; seu custo precisa ser medido em carga.
-- O usuário local é proprietário do banco. Em produção, separar migration owner
-  de runtime role, sem DDL, superuser ou permissão para desativar triggers.
+- O Compose separa administrador, migrator e runtime, com
+  [permissões verificadas em PostgreSQL real](adr/0012-permissoes-do-banco.md).
+  Ambientes externos devem provisionar os mesmos privilégios e fornecer segredos
+  próprios; os valores locais de `.env.example` são apenas de desenvolvimento.

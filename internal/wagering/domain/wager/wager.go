@@ -36,6 +36,11 @@ var (
 	ErrTerminal = errors.New("wager: terminal transaction")
 )
 
+// InfrastructureDataLoss identifies confirmed, irrecoverable loss of data
+// required to execute an operation safely. Retry exhaustion is not evidence of
+// permanent loss; infrastructure errors must never be mapped to this implicitly.
+const InfrastructureDataLoss = "INFRASTRUCTURE_DATA_LOSS"
+
 // Input contains business fields only. Idempotency keys belong to the command.
 type Input struct {
 	ProviderID                     string      `json:"providerId"`
@@ -282,8 +287,17 @@ func Restore(state Snapshot) (Transaction, error) {
 			return Transaction{}, ErrInvalid
 		}
 
-	case Rejected, Failed:
+	case Rejected:
 		if state.FailureCode == "" {
+			return Transaction{}, ErrInvalid
+		}
+
+		if state.FailureCode == InfrastructureDataLoss {
+			return Transaction{}, ErrInvalid
+		}
+
+	case Failed:
+		if state.FailureCode != InfrastructureDataLoss {
 			return Transaction{}, ErrInvalid
 		}
 
