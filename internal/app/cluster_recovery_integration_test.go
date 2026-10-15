@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/jackc/pgx/v5"
 
+	"jungle/internal/testsupport/sqsidentity"
 	"jungle/internal/wagering/application"
 	"jungle/internal/wagering/domain/wager"
 )
@@ -135,7 +136,11 @@ func TestThreeProcessesConcurrencyAndRestart(t *testing.T) {
 		}
 	}
 
-	if processed != 1 || rejected != 1 {
+	if processed != 1 {
+		t.Fatalf("processed/rejected = %d/%d; want 1/1", processed, rejected)
+	}
+
+	if rejected != 1 {
 		t.Fatalf("processed/rejected = %d/%d; want 1/1", processed, rejected)
 	}
 
@@ -151,7 +156,11 @@ func TestThreeProcessesConcurrencyAndRestart(t *testing.T) {
 		t.Fatalf("duplicate after restart HTTP status = %d", status)
 	}
 
-	if !replay.IdempotentReplay || replay.TransactionID != transactionID {
+	if !replay.IdempotentReplay {
+		t.Fatalf("duplicate after restart = %+v", replay)
+	}
+
+	if replay.TransactionID != transactionID {
 		t.Fatalf("duplicate after restart = %+v", replay)
 	}
 
@@ -164,8 +173,18 @@ func TestThreeProcessesConcurrencyAndRestart(t *testing.T) {
 		original := outcomes[i]
 		original.IdempotentReplay = true
 
-		if status != statuses[i] || replay != original {
-			t.Fatalf("contested replay after restart = %+v, status %d; want %+v, %d", replay, status, original, statuses[i])
+		if status != statuses[i] {
+			t.Fatalf("contested replay HTTP status = %d; want %d", status, statuses[i])
+		}
+
+		if replay != original {
+			t.Fatalf(
+				"contested replay after restart = %+v, status %d; want %+v, %d",
+				replay,
+				status,
+				original,
+				statuses[i],
+			)
 		}
 	}
 
@@ -205,7 +224,7 @@ func TestThreeProcessesConsumerRecovery(t *testing.T) {
 		MessageGroupId:         aws.String(state.ID),
 		MessageDeduplicationId: aws.String("cluster-single-send"),
 		MessageAttributes: map[string]types.MessageAttributeValue{
-			"AccessToken": {DataType: aws.String("String"), StringValue: aws.String(fixture.providerToken)},
+			"MessageSignature": {DataType: aws.String("String"), StringValue: aws.String(sqsidentity.Signature(t, "provider-a", string(body)))},
 		},
 	})
 	if err != nil {
@@ -213,7 +232,12 @@ func TestThreeProcessesConsumerRecovery(t *testing.T) {
 	}
 
 	interrupted := awaitClusterDelivery(t, fixture.ctx, fault.interrupted)
-	if interrupted.node != 0 || interrupted.receiveCount != "1" {
+
+	if interrupted.node != 0 {
+		t.Fatalf("initial consumer = %d, receipt count %s", interrupted.node, interrupted.receiveCount)
+	}
+
+	if interrupted.receiveCount != "1" {
 		t.Fatalf("initial consumer = %d, receipt count %s", interrupted.node, interrupted.receiveCount)
 	}
 
@@ -222,6 +246,7 @@ func TestThreeProcessesConsumerRecovery(t *testing.T) {
 	}
 
 	before := clusterFinancialSnapshot(t, fixture, state.ID)
+
 	if err := nodes[0].kill(); err != nil {
 		t.Fatal(err)
 	}
@@ -231,18 +256,31 @@ func TestThreeProcessesConsumerRecovery(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if status != http.StatusOK || !replay.IdempotentReplay {
+	if status != http.StatusOK {
+		t.Fatalf("HTTP replay after SQS commit = %+v, status %d", replay, status)
+	}
+
+	if !replay.IdempotentReplay {
 		t.Fatalf("HTTP replay after SQS commit = %+v, status %d", replay, status)
 	}
 
 	close(fault.receives[1])
 	close(fault.receives[2])
 	recovered := awaitClusterDelivery(t, fixture.ctx, fault.deleted)
-	if recovered.node == 0 || recovered.receiveCount != "2" {
+
+	if recovered.node == 0 {
 		t.Fatalf("recovered consumer = %d, receipt count %s", recovered.node, recovered.receiveCount)
 	}
 
-	if recovered.messageID != interrupted.messageID || recovered.receipt == interrupted.receipt {
+	if recovered.receiveCount != "2" {
+		t.Fatalf("recovered consumer = %d, receipt count %s", recovered.node, recovered.receiveCount)
+	}
+
+	if recovered.messageID != interrupted.messageID {
+		t.Fatal("recovery did not receive a fresh receipt for the same SQS message")
+	}
+
+	if recovered.receipt == interrupted.receipt {
 		t.Fatal("recovery did not receive a fresh receipt for the same SQS message")
 	}
 
@@ -259,6 +297,7 @@ func TestThreeProcessesConsumerRecovery(t *testing.T) {
  `
 
 	var inbox int
+
 	if err := fixture.pool.QueryRow(fixture.ctx, inboxQuery).Scan(&inbox); err != nil {
 		t.Fatal(err)
 	}
@@ -317,11 +356,19 @@ func TestThreeProcessesPublisherRecovery(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if published || attempts != 1 {
+			if published {
 				t.Fatal("interrupted event was not an abandoned first claim")
 			}
 
-			if interrupted.body != string(payload) || interrupted.group != state.ID {
+			if attempts != 1 {
+				t.Fatal("interrupted event was not an abandoned first claim")
+			}
+
+			if interrupted.body != string(payload) {
+				t.Fatal("publisher sent a different event snapshot or wallet group")
+			}
+
+			if interrupted.group != state.ID {
 				t.Fatal("publisher sent a different event snapshot or wallet group")
 			}
 
@@ -335,11 +382,19 @@ func TestThreeProcessesPublisherRecovery(t *testing.T) {
 				recovered = awaitClusterDelivery(t, fixture.ctx, fault.sent)
 			}
 
-			if recovered.node == interrupted.node || !recovered.accepted {
+			if recovered.node == interrupted.node {
 				t.Fatal("abandoned event was not accepted from another live process")
 			}
 
-			if recovered.body != interrupted.body || recovered.group != interrupted.group {
+			if !recovered.accepted {
+				t.Fatal("abandoned event was not accepted from another live process")
+			}
+
+			if recovered.body != interrupted.body {
+				t.Fatal("replacement publisher changed the event identity or payload")
+			}
+
+			if recovered.group != interrupted.group {
 				t.Fatal("replacement publisher changed the event identity or payload")
 			}
 
@@ -358,7 +413,12 @@ func TestThreeProcessesPublisherRecovery(t *testing.T) {
 			var failures int
 
 			awaitCluster(t, fixture.ctx, func() bool {
-				err := fixture.pool.QueryRow(fixture.ctx, completedEventQuery, interrupted.eventID, leaseUntil).Scan(
+				err := fixture.pool.QueryRow(
+					fixture.ctx,
+					completedEventQuery,
+					interrupted.eventID,
+					leaseUntil,
+				).Scan(
 					&published,
 					&expired,
 					&released,
@@ -372,11 +432,19 @@ func TestThreeProcessesPublisherRecovery(t *testing.T) {
 				return published
 			})
 
-			if !expired || !released {
+			if !expired {
 				t.Fatalf("recovered lease: expired=%t, released=%t", expired, released)
 			}
 
-			if attempts != 2 || failures != 0 {
+			if !released {
+				t.Fatalf("recovered lease: expired=%t, released=%t", expired, released)
+			}
+
+			if attempts != 2 {
+				t.Fatalf("recovered counters: attempts=%d, failures=%d", attempts, failures)
+			}
+
+			if failures != 0 {
 				t.Fatalf("recovered counters: attempts=%d, failures=%d", attempts, failures)
 			}
 
@@ -411,7 +479,11 @@ func TestThreeProcessesPendingReferenceRestart(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if status != http.StatusAccepted || pending.Status != wager.PendingReference {
+			if status != http.StatusAccepted {
+				t.Fatalf("pending refund = %+v, status %d", pending, status)
+			}
+
+			if pending.Status != wager.PendingReference {
 				t.Fatalf("pending refund = %+v, status %d", pending, status)
 			}
 
@@ -421,7 +493,11 @@ func TestThreeProcessesPendingReferenceRestart(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if status != http.StatusOK || processedBet.Status != wager.Processed {
+			if status != http.StatusOK {
+				t.Fatalf("late bet = %+v, status %d", processedBet, status)
+			}
+
+			if processedBet.Status != wager.Processed {
 				t.Fatalf("late bet = %+v, status %d", processedBet, status)
 			}
 
@@ -439,7 +515,10 @@ func TestThreeProcessesPendingReferenceRestart(t *testing.T) {
 			awaitCluster(t, fixture.ctx, func() bool {
 				var resolved *string
 
-				if err := fixture.pool.QueryRow(fixture.ctx, referenceStateQuery, pending.TransactionID).Scan(&finalStatus, &resolved); err != nil {
+				if err := fixture.pool.QueryRow(fixture.ctx, referenceStateQuery, pending.TransactionID).Scan(
+					&finalStatus,
+					&resolved,
+				); err != nil {
 					t.Fatal(err)
 				}
 
@@ -466,7 +545,11 @@ func TestThreeProcessesPendingReferenceRestart(t *testing.T) {
 				t.Fatalf("resolved reversal replay HTTP status = %d", status)
 			}
 
-			if !replay.IdempotentReplay || replay.TransactionID != pending.TransactionID {
+			if !replay.IdempotentReplay {
+				t.Fatalf("resolved reversal replay = %+v", replay)
+			}
+
+			if replay.TransactionID != pending.TransactionID {
 				t.Fatalf("resolved reversal replay = %+v", replay)
 			}
 
@@ -510,7 +593,13 @@ func assertIndependentClusterWallets(
 		}
 	}()
 
-	if _, err := lock.Exec(fixture.ctx, "SELECT id FROM wallets WHERE id=$1 FOR UPDATE", first.ID); err != nil {
+	const lockWalletQuery = `
+    SELECT id
+    FROM wallets
+    WHERE id = $1
+    FOR UPDATE`
+
+	if _, err := lock.Exec(fixture.ctx, lockWalletQuery, first.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -531,7 +620,11 @@ func assertIndependentClusterWallets(
 	awaitCluster(t, fixture.ctx, func() bool {
 		var waiting int
 
-		if err := fixture.pool.QueryRow(fixture.ctx, waitingWalletQuery, fixture.prefix+"_node_0").Scan(&waiting); err != nil {
+		if err := fixture.pool.QueryRow(
+			fixture.ctx,
+			waitingWalletQuery,
+			fixture.prefix+"_node_0",
+		).Scan(&waiting); err != nil {
 			t.Fatal(err)
 		}
 
@@ -543,7 +636,11 @@ func assertIndependentClusterWallets(
 		t.Fatal(err)
 	}
 
-	if status != http.StatusOK || result.Status != wager.Processed {
+	if status != http.StatusOK {
+		t.Fatal("independent wallet did not progress while another wallet was locked")
+	}
+
+	if result.Status != wager.Processed {
 		t.Fatal("independent wallet did not progress while another wallet was locked")
 	}
 
@@ -558,11 +655,16 @@ func assertIndependentClusterWallets(
 	}
 
 	outcome := <-completed
+
 	if outcome.err != nil {
 		t.Fatal(outcome.err)
 	}
 
-	if outcome.status != http.StatusOK || outcome.result.Status != wager.Processed {
+	if outcome.status != http.StatusOK {
+		t.Fatal("wallet did not resume after releasing its lock")
+	}
+
+	if outcome.result.Status != wager.Processed {
 		t.Fatal("wallet did not resume after releasing its lock")
 	}
 

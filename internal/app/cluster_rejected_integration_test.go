@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 
+	"jungle/internal/testsupport/sqsidentity"
 	"jungle/internal/wagering/domain/wager"
 	"jungle/internal/wagering/domain/wallet"
 )
@@ -35,27 +36,11 @@ func TestThreeProcessesRejectedMessagesRestart(t *testing.T) {
 	fault := newClusterFault(t, "observe")
 	endpoints := fault.proxies(t, fixture)
 	nodes := fixture.startThree(t, endpoints)
-	parts := strings.Split(fixture.providerToken, ".")
-	if len(parts) != 3 {
-		t.Fatal("IdP did not issue a compact JWT")
-	}
-
-	signature, err := base64.RawURLEncoding.DecodeString(parts[2])
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(signature) == 0 {
-		t.Fatal("IdP issued an unsigned token")
-	}
-
-	signature[0] ^= 1
-	parts[2] = base64.RawURLEncoding.EncodeToString(signature)
 	cases := []rejectedClusterMessage{
-		{name: "unknown field", credential: fixture.providerToken},
+		{name: "unknown field"},
 		{name: "missing credential"},
-		{name: "invalid signature", credential: strings.Join(parts, ".")},
-		{name: "another provider", credential: token(t, fixture.issuer, "provider-b")},
+		{name: "invalid signature"},
+		{name: "another provider"},
 	}
 	byBrokerID := make(map[string]int)
 	byBody := make(map[string]int)
@@ -84,16 +69,43 @@ func TestThreeProcessesRejectedMessagesRestart(t *testing.T) {
 		}
 
 		current.body = string(encoded)
+		if current.name != "missing credential" {
+			provider := "provider-a"
+			if current.name == "another provider" {
+				provider = "provider-b"
+			}
+
+			current.credential = sqsidentity.Signature(t, provider, current.body)
+		}
+
+		if current.name == "invalid signature" {
+			parts := strings.Split(current.credential, ".")
+			signature, err := base64.RawURLEncoding.DecodeString(parts[2])
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			signature[0] ^= 1
+			parts[2] = base64.RawURLEncoding.EncodeToString(signature)
+			current.credential = strings.Join(parts, ".")
+		}
+
 		current.snapshot = clusterFinancialSnapshot(t, fixture, current.wallet.ID)
 		message := types.Message{Body: aws.String(current.body)}
 
 		if current.credential != "" {
 			message.MessageAttributes = map[string]types.MessageAttributeValue{
-				"AccessToken": {DataType: aws.String("String"), StringValue: aws.String(current.credential)},
+				"MessageSignature": {DataType: aws.String("String"), StringValue: aws.String(current.credential)},
 			}
 		}
 
-		current.brokerID = sendClusterMessage(t, fixture, message, current.wallet.ID, strings.ReplaceAll(current.name, " ", "-"))
+		current.brokerID = sendClusterMessage(
+			t,
+			fixture,
+			message,
+			current.wallet.ID,
+			strings.ReplaceAll(current.name, " ", "-"),
+		)
 		byBrokerID[current.brokerID] = i
 		byBody[current.body] = i
 	}
@@ -104,6 +116,7 @@ func TestThreeProcessesRejectedMessagesRestart(t *testing.T) {
 	for observed < len(cases) {
 		delivery := awaitClusterDelivery(t, fixture.ctx, fault.received)
 		index, exists := byBrokerID[delivery.messageID]
+
 		if !exists {
 			t.Fatal("cluster received an unrelated message")
 		}
@@ -141,6 +154,7 @@ func TestThreeProcessesRejectedMessagesRestart(t *testing.T) {
 
 		delivery := awaitClusterDelivery(t, fixture.ctx, fault.received)
 		index, exists := byBrokerID[delivery.messageID]
+
 		if !exists {
 			t.Fatal("restart received an unrelated message")
 		}
@@ -153,7 +167,11 @@ func TestThreeProcessesRejectedMessagesRestart(t *testing.T) {
 		// Killing a process can consume a broker receipt before its response reaches the observer.
 		// The counter must survive restart; gaps are valid for abandoned in-flight receives.
 		if count < 2 || count > 5 {
-			t.Fatalf("%s restarted receive count = %d; want preserved count within 2..5", cases[index].name, count)
+			t.Fatalf(
+				"%s restarted receive count = %d; want preserved count within 2..5",
+				cases[index].name,
+				count,
+			)
 		}
 
 		cases[index].count = max(cases[index].count, count)
@@ -166,7 +184,7 @@ func TestThreeProcessesRejectedMessagesRestart(t *testing.T) {
 			QueueUrl:              aws.String(dlqURL),
 			MaxNumberOfMessages:   1,
 			WaitTimeSeconds:       10,
-			MessageAttributeNames: []string{"AccessToken"},
+			MessageAttributeNames: []string{"MessageSignature"},
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -174,12 +192,14 @@ func TestThreeProcessesRejectedMessagesRestart(t *testing.T) {
 
 		for _, message := range received.Messages {
 			index, exists := byBody[aws.ToString(message.Body)]
+
 			if !exists {
 				t.Fatal("DLQ changed the original rejected message")
 			}
 
 			current := cases[index]
-			attribute, present := message.MessageAttributes["AccessToken"]
+			attribute, present := message.MessageAttributes["MessageSignature"]
+
 			if present != (current.credential != "") {
 				t.Fatalf("DLQ changed credential presence for %s", current.name)
 			}
@@ -207,6 +227,7 @@ func TestThreeProcessesRejectedMessagesRestart(t *testing.T) {
 	}
 
 	var inbox int
+
 	if err := fixture.pool.QueryRow(fixture.ctx, "SELECT COUNT(*) FROM inbox").Scan(&inbox); err != nil {
 		t.Fatal(err)
 	}

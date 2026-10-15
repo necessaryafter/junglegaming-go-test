@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -62,13 +61,28 @@ func (a *API) Register(mux *http.ServeMux) {
 
 	mux.HandleFunc("GET /health/ready", a.ready)
 	mux.HandleFunc("GET /metrics", a.scrape)
-	mux.HandleFunc("POST /wallets", a.authorize(a.open))
-	mux.HandleFunc("GET /wallets/{walletID}", a.authorize(a.wallet))
-	mux.HandleFunc("GET /wallets/{walletID}/ledger", a.authorize(a.ledger))
-	mux.HandleFunc("POST /wallets/{walletID}/reconciliation", a.authorize(a.reconcile))
-	mux.HandleFunc("POST /wagering/transactions", a.authorize(a.submit))
-	mux.HandleFunc("GET /wagering/transactions/{transactionID}", a.authorize(a.transaction))
-	mux.HandleFunc("GET /providers/{providerID}/wagering/transactions/{externalID}", a.authorize(a.transaction))
+	mux.HandleFunc("POST /wallets", a.instrument("POST /wallets", a.authorize(a.open)))
+	mux.HandleFunc("GET /wallets/{walletID}", a.instrument("GET /wallets/{walletID}", a.authorize(a.wallet)))
+	mux.HandleFunc(
+		"GET /wallets/{walletID}/ledger",
+		a.instrument("GET /wallets/{walletID}/ledger", a.authorize(a.ledger)),
+	)
+	mux.HandleFunc(
+		"POST /wallets/{walletID}/reconciliation",
+		a.instrument("POST /wallets/{walletID}/reconciliation", a.authorize(a.reconcile)),
+	)
+	mux.HandleFunc(
+		"POST /wagering/transactions",
+		a.instrument("POST /wagering/transactions", a.authorize(a.submit)),
+	)
+	mux.HandleFunc(
+		"GET /wagering/transactions/{transactionID}",
+		a.instrument("GET /wagering/transactions/{transactionID}", a.authorize(a.transaction)),
+	)
+	mux.HandleFunc(
+		"GET /providers/{providerID}/wagering/transactions/{externalID}",
+		a.instrument("GET /providers/{providerID}/wagering/transactions/{externalID}", a.authorize(a.transaction)),
+	)
 }
 
 func (a *API) authorize(next endpoint) http.HandlerFunc {
@@ -112,7 +126,11 @@ func decode(w http.ResponseWriter, r *http.Request, value any) error {
 	return nil
 }
 
-func (a *API) open(w http.ResponseWriter, r *http.Request, principal application.Principal) {
+func (a *API) open(
+	w http.ResponseWriter,
+	r *http.Request,
+	principal application.Principal,
+) {
 	var input struct {
 		PlayerID       string      `json:"playerId"`
 		InitialBalance money.Money `json:"initialBalance"`
@@ -134,7 +152,11 @@ func (a *API) open(w http.ResponseWriter, r *http.Request, principal application
 	a.write(w, http.StatusCreated, state)
 }
 
-func (a *API) wallet(w http.ResponseWriter, r *http.Request, principal application.Principal) {
+func (a *API) wallet(
+	w http.ResponseWriter,
+	r *http.Request,
+	principal application.Principal,
+) {
 	state, err := a.service.Wallet(r.Context(), principal, r.PathValue("walletID"))
 	if err != nil {
 		a.fail(w, err)
@@ -145,7 +167,11 @@ func (a *API) wallet(w http.ResponseWriter, r *http.Request, principal applicati
 	a.write(w, http.StatusOK, state)
 }
 
-func (a *API) submit(w http.ResponseWriter, r *http.Request, principal application.Principal) {
+func (a *API) submit(
+	w http.ResponseWriter,
+	r *http.Request,
+	principal application.Principal,
+) {
 	var input wager.Input
 
 	if err := decode(w, r, &input); err != nil {
@@ -156,32 +182,26 @@ func (a *API) submit(w http.ResponseWriter, r *http.Request, principal applicati
 
 	start := time.Now()
 	result, err := a.service.Submit(r.Context(), principal, application.Command{
-		Input: input, Key: r.Header.Get("Idempotency-Key"), CorrelationID: r.Header.Get("X-Correlation-ID"),
+		Input:         input,
+		Key:           r.Header.Get("Idempotency-Key"),
+		CorrelationID: r.Header.Get("X-Correlation-ID"),
 	})
-	a.metrics.Requests.Add(1)
-	a.metrics.ProcessingNanoseconds.Add(uint64(time.Since(start)))
-
 	if err != nil {
+		a.metrics.ObserveProcessing("http", "ERROR", false, time.Since(start))
 		a.fail(w, err)
 
 		return
 	}
 
-	if result.IdempotentReplay {
-		a.metrics.Duplicates.Add(1)
-	}
+	a.metrics.ObserveProcessing("http", string(result.Status), result.IdempotentReplay, time.Since(start))
 
 	status := http.StatusOK
 
 	switch result.Status {
-	case wager.Processed:
-		a.metrics.Processed.Add(1)
 	case wager.Rejected:
 		status = http.StatusUnprocessableEntity
-		a.metrics.Rejected.Add(1)
 	case wager.Pending, wager.PendingReference:
 		status = http.StatusAccepted
-		a.metrics.Pending.Add(1)
 	}
 
 	a.logger.Info("transaction handled", "transactionId", result.TransactionID, "walletId", input.WalletID,
@@ -189,8 +209,18 @@ func (a *API) submit(w http.ResponseWriter, r *http.Request, principal applicati
 	a.write(w, status, result)
 }
 
-func (a *API) transaction(w http.ResponseWriter, r *http.Request, principal application.Principal) {
-	state, err := a.service.Transaction(r.Context(), principal, r.PathValue("transactionID"), r.PathValue("providerID"), r.PathValue("externalID"))
+func (a *API) transaction(
+	w http.ResponseWriter,
+	r *http.Request,
+	principal application.Principal,
+) {
+	state, err := a.service.Transaction(
+		r.Context(),
+		principal,
+		r.PathValue("transactionID"),
+		r.PathValue("providerID"),
+		r.PathValue("externalID"),
+	)
 	if err != nil {
 		a.fail(w, err)
 
@@ -200,7 +230,11 @@ func (a *API) transaction(w http.ResponseWriter, r *http.Request, principal appl
 	a.write(w, http.StatusOK, state)
 }
 
-func (a *API) ledger(w http.ResponseWriter, r *http.Request, principal application.Principal) {
+func (a *API) ledger(
+	w http.ResponseWriter,
+	r *http.Request,
+	principal application.Principal,
+) {
 	limit := 50
 
 	if raw := r.URL.Query().Get("limit"); raw != "" {
@@ -214,7 +248,13 @@ func (a *API) ledger(w http.ResponseWriter, r *http.Request, principal applicati
 		limit = parsed
 	}
 
-	page, err := a.service.Ledger(r.Context(), principal, r.PathValue("walletID"), r.URL.Query().Get("cursor"), limit)
+	page, err := a.service.Ledger(
+		r.Context(),
+		principal,
+		r.PathValue("walletID"),
+		r.URL.Query().Get("cursor"),
+		limit,
+	)
 	if err != nil {
 		a.fail(w, err)
 
@@ -224,7 +264,11 @@ func (a *API) ledger(w http.ResponseWriter, r *http.Request, principal applicati
 	a.write(w, http.StatusOK, page)
 }
 
-func (a *API) reconcile(w http.ResponseWriter, r *http.Request, principal application.Principal) {
+func (a *API) reconcile(
+	w http.ResponseWriter,
+	r *http.Request,
+	principal application.Principal,
+) {
 	result, err := a.service.Reconcile(r.Context(), principal, r.PathValue("walletID"))
 	if err != nil {
 		a.fail(w, err)
@@ -260,35 +304,7 @@ func (a *API) ready(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) scrape(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
-	defer cancel()
-
-	stats, err := a.store.Statistics(ctx)
-	if err != nil {
-		a.fail(w, err)
-
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/plain; version=0.0.4")
-	_, err = fmt.Fprintf(w, `jungle_requests_total %d
-jungle_processed_total %d
-jungle_rejected_total %d
-jungle_pending_total %d
-jungle_duplicates_total %d
-jungle_retries_total %d
-jungle_events_published_total %d
-jungle_reconciliation_divergences_total %d
-jungle_processing_nanoseconds_total %d
-jungle_outbox_pending %d
-jungle_outbox_oldest_seconds %d
-jungle_pending_references %d
-`, a.metrics.Requests.Load(), a.metrics.Processed.Load(), a.metrics.Rejected.Load(), a.metrics.Pending.Load(),
-		a.metrics.Duplicates.Load(), a.metrics.Retries.Load(), a.metrics.Published.Load(), a.metrics.ReconciliationDivergences.Load(),
-		a.metrics.ProcessingNanoseconds.Load(), stats.OutboxPending, stats.OutboxOldestSeconds, stats.PendingReferences)
-	if err != nil {
-		a.logger.Warn("metrics response write failed")
-	}
+	a.metrics.Handler().ServeHTTP(w, r)
 }
 
 func (a *API) fail(w http.ResponseWriter, err error) {
@@ -300,6 +316,7 @@ func (a *API) fail(w http.ResponseWriter, err error) {
 	case errors.Is(err, application.ErrForbidden):
 		status, code = http.StatusForbidden, "FORBIDDEN"
 	case errors.Is(err, application.ErrConflict):
+		a.metrics.RecordConflict("http")
 		status, code = http.StatusConflict, "CONFLICT"
 	case errors.Is(err, application.ErrNotFound):
 		status, code = http.StatusNotFound, "NOT_FOUND"

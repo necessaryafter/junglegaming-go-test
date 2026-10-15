@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"jungle/internal/platform/telemetry"
 	"jungle/internal/wagering/application"
 	"jungle/internal/wagering/domain/event"
 	"jungle/internal/wagering/domain/money"
@@ -25,12 +26,22 @@ import (
 )
 
 type Store struct {
-	pool   *pgxpool.Pool
-	logger *slog.Logger
+	pool    *pgxpool.Pool
+	logger  *slog.Logger
+	metrics *telemetry.Metrics
 }
 
-func New(pool *pgxpool.Pool, logger *slog.Logger) *Store {
-	return &Store{pool: pool, logger: logger}
+// New uses a private metrics registry when metrics is nil.
+func New(
+	pool *pgxpool.Pool,
+	logger *slog.Logger,
+	metrics *telemetry.Metrics,
+) *Store {
+	if metrics == nil {
+		metrics = &telemetry.Metrics{}
+	}
+
+	return &Store{pool: pool, logger: logger, metrics: metrics}
 }
 
 func newID() (string, error) {
@@ -60,7 +71,7 @@ func classify(err error) error {
 	var pgErr *pgconn.PgError
 
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		return application.ErrConflict
+		return fmt.Errorf("%w: %w", application.ErrConflict, err)
 	}
 
 	return err
@@ -103,7 +114,13 @@ func (s *Store) Wallet(ctx context.Context, id string) (wallet.Snapshot, error) 
 	return scanWallet(s.pool.QueryRow(ctx, "SELECT "+walletColumns+" FROM wallets WHERE id=$1", id))
 }
 
-func (s *Store) Open(ctx context.Context, playerID string, initial money.Money) (wallet.Snapshot, error) {
+func (s *Store) Open(
+	ctx context.Context,
+	playerID string,
+	initial money.Money,
+) (out wallet.Snapshot, err error) {
+	defer func() { s.observeConflict(err) }()
+
 	units, err := initial.MinorUnits()
 	if err != nil {
 		return wallet.Snapshot{}, err
@@ -308,13 +325,18 @@ func result(state wager.Snapshot, replay bool) application.Result {
 // operations finish or become durable PENDING_REFERENCE in the same transaction.
 func (s *Store) Submit(ctx context.Context, command application.Command) (application.Result, error) {
 	out, err := s.submit(ctx, command)
+	s.observeConflict(err)
+
 	if !errors.Is(err, application.ErrConflict) {
 		return out, err
 	}
 
 	// A uniqueness race may involve another wallet; start a fresh transaction
 	// after rollback to read the winner and verify both persistent identities.
-	return s.submit(ctx, command)
+	out, err = s.submit(ctx, command)
+	s.observeConflict(err)
+
+	return out, err
 }
 
 func (s *Store) submit(ctx context.Context, command application.Command) (application.Result, error) {

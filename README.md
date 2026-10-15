@@ -18,7 +18,7 @@ internal/
     domain/                  # money, wallet, wager e event
     postgres/                # persistência financeira e inbox/outbox
     httpapi/                 # rotas e handlers do módulo
-    worker/                  # consumidor, publisher e referências
+    worker/                  # consumidor, publisher, referências e coleta de métricas
   platform/
     config/                  # configuração de startup
     identity/                # identidade autenticada compartilhada
@@ -28,6 +28,8 @@ internal/
     telemetry/               # logger e contadores
     httpserver/              # listener, timeouts e shutdown
 ```
+
+Em `worker`, `Consumer`, `Publisher`, `References` e `StatisticsCollector` têm construtores e dependências próprios; `module.go` faz a composição e `lifecycle.go` coordena cancelamento e encerramento.
 
 Cada módulo registra seus construtores e ciclo de vida com Fx. `app` monta o processo; o servidor recebe rotas por contribuições dos módulos. A plataforma não depende de `wagering`, e o domínio não depende da infraestrutura. Os testes acompanham os pacotes e verificam também essas fronteiras.
 
@@ -182,7 +184,7 @@ Repetir a abertura para o mesmo jogador e moeda retorna conflito. Repetir a apos
 | `422` | Operação rejeitada, com `status`, `failureCode` e saldo observado |
 | `503` | `{"code":"UNAVAILABLE"}`; nova tentativa pode ser necessária |
 
-Os endpoints do desafio estão implementados com `net/http`. `GET /wallets/{id}/ledger` aceita `limit` de 1 a 100 (padrão 50), retorna `entries` e `nextCursor`. Health checks públicos: `/health/live` e `/health/ready`. Métricas iniciais: `/metrics`.
+Os endpoints do desafio estão implementados com `net/http`. `GET /wallets/{id}/ledger` aceita `limit` de 1 a 100 (padrão 50), retorna `entries` e `nextCursor`. Health checks públicos: `/health/live` e `/health/ready`. Métricas Prometheus: `/metrics`, com histogramas de latência, SQS/DLQ, backlog e conflitos. Veja o [catálogo e consultas PromQL](docs/observabilidade.md).
 
 ## SQS
 
@@ -239,6 +241,37 @@ go test -tags=integration -race ./... -count=1
 ```
 
 Os testes criam schemas PostgreSQL e filas SQS exclusivos e os removem ao terminar. O teste de separação de permissões também cria bancos e papéis exclusivos, conecta como migrator e runtime reais e os remove ao terminar. `TEST_DATABASE_URL` deve usar um administrador do ambiente de testes, com permissão para criar esses recursos; não use a credencial de runtime nessa variável. Sem as variáveis `TEST_*`, os testes de integração são pulados explicitamente.
+
+O teste `TestRealDependenciesAndLifecycle` também verifica isolamento entre
+provedores nas duas rotas de consulta de transações e expiração real de um token
+Keycloak. O cliente local `provider-a-expiring` representa `provider-a` e emite
+tokens de 10 segundos pelo atributo
+[`access.token.lifespan`](https://www.keycloak.org/docs-api/26.8.0/javadocs/constant-values.html).
+O teste confirma acesso antes da expiração, aguarda o `exp` assinado e exige 401
+nas consultas e no envio de uma nova aposta, sem persistir a operação nem mudar
+a carteira. Respostas negadas devem conter apenas o código de erro.
+
+Se o realm já existia antes da inclusão desse cliente, o import de startup não
+o atualiza. Para testar com uma importação nova sem substituir o realm persistido,
+inicie um Keycloak temporário em outra porta:
+
+```sh
+docker run --rm --name jungle-authorization-keycloak \
+  -p 127.0.0.1:18180:8080 \
+  -v "$PWD/docker/keycloak/jungle-realm.json:/opt/keycloak/data/import/jungle-realm.json:ro" \
+  -e KC_HOSTNAME=http://localhost:18180 \
+  quay.io/keycloak/keycloak:26.8.0 start-dev --import-realm
+```
+
+Após a mensagem de startup do Keycloak, execute em outro terminal:
+
+```sh
+TEST_DATABASE_URL='postgres://jungle:jungle-local@localhost:5432/jungle?sslmode=disable' \
+TEST_OIDC_ISSUER='http://localhost:18180/realms/jungle' \
+TEST_SQS_ENDPOINT='http://localhost:4566' \
+go test -tags=integration -race ./internal/app \
+  -run '^TestRealDependenciesAndLifecycle$' -count=1 -v
+```
 
 Para verificar somente as permissões com PostgreSQL real:
 

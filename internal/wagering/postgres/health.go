@@ -3,8 +3,6 @@ package postgres
 import (
 	"context"
 	"errors"
-
-	"github.com/jackc/pgx/v5"
 )
 
 // Ready verifies the schema as well as connectivity.
@@ -67,14 +65,24 @@ type Statistics struct {
 func (s *Store) Statistics(ctx context.Context) (Statistics, error) {
 	var stats Statistics
 
-	err := s.pool.QueryRow(ctx, `SELECT count(*),COALESCE(EXTRACT(EPOCH FROM now()-min(occurred_at))::bigint,0)
-		FROM outbox WHERE published_at IS NULL`).Scan(&stats.OutboxPending, &stats.OutboxOldestSeconds)
-	if err != nil {
-		return Statistics{}, err
-	}
+	const statisticsQuery = `
+    SELECT
+        COUNT(*),
+        GREATEST(0, COALESCE(EXTRACT(EPOCH FROM NOW() - MIN(occurred_at))::bigint, 0)),
+        (
+            SELECT COUNT(*)
+            FROM wager_transactions
+            WHERE status = 'PENDING_REFERENCE'
+        )
+    FROM outbox
+    WHERE published_at IS NULL`
 
-	err = s.pool.QueryRow(ctx, "SELECT count(*) FROM wager_transactions WHERE status='PENDING_REFERENCE'").Scan(&stats.PendingReferences)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+	err := s.pool.QueryRow(ctx, statisticsQuery).Scan(
+		&stats.OutboxPending,
+		&stats.OutboxOldestSeconds,
+		&stats.PendingReferences,
+	)
+	if err != nil {
 		return Statistics{}, err
 	}
 

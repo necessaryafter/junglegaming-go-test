@@ -9,7 +9,7 @@ import (
 )
 
 func TestClaimEventRejectsInvalidLeaseBeforeIO(t *testing.T) {
-	store := postgres.New(nil, nil)
+	store := postgres.New(nil, nil, nil)
 
 	for _, duration := range []time.Duration{0, -time.Second, time.Nanosecond, 1500 * time.Microsecond} {
 		t.Run(duration.String(), func(t *testing.T) {

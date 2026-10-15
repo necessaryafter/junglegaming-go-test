@@ -58,20 +58,20 @@ func TestPublisherRecoveryProcess(t *testing.T) {
 	defer pool.Close()
 
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
-	store := postgres.New(pool, logger)
-	client := queue.New(cfg)
+	store := postgres.New(pool, logger, nil)
+	client := queue.New(cfg, nil)
 	if err := client.Start(ctx); err != nil {
 		t.Fatal(err)
 	}
 
 	metrics := &telemetry.Metrics{}
-	workers := New(store, client, application.New(store), nil, logger, metrics, cfg)
+	publisher := NewPublisher(store, client, logger, metrics, cfg)
 	done := make(chan struct{})
 
 	go func() {
 		defer close(done)
 
-		workers.publish(ctx)
+		publisher.run(ctx)
 	}()
 
 	// Join the publisher even when assertions fail; pool ownership stays in this process.
@@ -142,7 +142,7 @@ func TestPublisherRecoversAfterInterruption(t *testing.T) {
 			fixture := setupRecovery(t)
 			ctx := fixture.ctx
 			logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
-			store := postgres.New(fixture.pool, logger)
+			store := postgres.New(fixture.pool, logger, nil)
 			initial, err := money.New("100.00", money.BRL)
 			if err != nil {
 				t.Fatal(err)

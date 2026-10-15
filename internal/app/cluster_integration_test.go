@@ -29,6 +29,7 @@ import (
 	"go.uber.org/fx"
 
 	"jungle/internal/app"
+	"jungle/internal/testsupport/sqsidentity"
 	"jungle/internal/wagering/application"
 	"jungle/internal/wagering/domain/money"
 	"jungle/internal/wagering/domain/wager"
@@ -40,6 +41,7 @@ import (
 // TestClusterProcess is a test-only entrypoint for a complete, independent Fx application.
 func TestClusterProcess(t *testing.T) {
 	readyPath := os.Getenv("JUNGLE_CLUSTER_READY")
+
 	if readyPath == "" {
 		t.Skip("entrypoint for the three-process integration tests")
 	}
@@ -87,6 +89,7 @@ func TestClusterProcess(t *testing.T) {
 	}
 
 	commands := bufio.NewScanner(os.Stdin)
+
 	if !commands.Scan() {
 		t.Fatalf("missing shutdown command: %v", commands.Err())
 	}
@@ -149,6 +152,7 @@ func (n *clusterNode) kill() error {
 	}
 
 	var exitError *exec.ExitError
+
 	if !errors.As(err, &exitError) {
 		return fmt.Errorf("application was not killed: %w; %s", err, n.output)
 	}
@@ -181,9 +185,20 @@ func setupCluster(t *testing.T) *clusterFixture {
 	databaseURL := os.Getenv("TEST_DATABASE_URL")
 	issuer := os.Getenv("TEST_OIDC_ISSUER")
 	endpoint := os.Getenv("TEST_SQS_ENDPOINT")
-	if databaseURL == "" || issuer == "" || endpoint == "" {
-		t.Skip("TEST_DATABASE_URL, TEST_OIDC_ISSUER and TEST_SQS_ENDPOINT are required")
+
+	if databaseURL == "" {
+		t.Skip("TEST_DATABASE_URL is required")
 	}
+
+	if issuer == "" {
+		t.Skip("TEST_OIDC_ISSUER is required")
+	}
+
+	if endpoint == "" {
+		t.Skip("TEST_SQS_ENDPOINT is required")
+	}
+
+	sqsidentity.Configure(t)
 
 	ctx, cancel := context.WithTimeout(t.Context(), 3*time.Minute)
 	t.Cleanup(cancel)
@@ -234,11 +249,12 @@ func setupCluster(t *testing.T) *clusterFixture {
 		t.Fatal(err)
 	}
 
-	err = migrations.Apply(ctx, connection.Conn(), "up")
-	connection.Release()
-	if err != nil {
+	if err := migrations.Apply(ctx, connection.Conn(), "up"); err != nil {
+		connection.Release()
 		t.Fatal(err)
 	}
+
+	connection.Release()
 
 	t.Setenv("AWS_REGION", "us-east-1")
 	t.Setenv("AWS_ACCESS_KEY_ID", "test")
@@ -249,9 +265,12 @@ func setupCluster(t *testing.T) *clusterFixture {
 	}
 
 	fixture := &clusterFixture{
-		ctx:           ctx,
-		pool:          pool,
-		broker:        sqs.NewFromConfig(cfg, func(options *sqs.Options) { options.BaseEndpoint = aws.String(endpoint) }),
+		ctx:  ctx,
+		pool: pool,
+		broker: sqs.NewFromConfig(
+			cfg,
+			func(options *sqs.Options) { options.BaseEndpoint = aws.String(endpoint) },
+		),
 		databaseURL:   address.String(),
 		endpoint:      endpoint,
 		issuer:        issuer,
@@ -271,6 +290,7 @@ func setupCluster(t *testing.T) *clusterFixture {
 		}
 
 		queueURL := aws.ToString(created.QueueUrl)
+
 		if fixture.requestsURL == "" {
 			fixture.requestsURL = queueURL
 		} else {
@@ -281,7 +301,10 @@ func setupCluster(t *testing.T) *clusterFixture {
 			cleanup, stop := context.WithTimeout(context.Background(), 5*time.Second)
 			defer stop()
 
-			if _, err := fixture.broker.DeleteQueue(cleanup, &sqs.DeleteQueueInput{QueueUrl: aws.String(queueURL)}); err != nil {
+			if _, err := fixture.broker.DeleteQueue(
+				cleanup,
+				&sqs.DeleteQueueInput{QueueUrl: aws.String(queueURL)},
+			); err != nil {
 				t.Errorf("delete cluster queue: %v", err)
 			}
 		})
@@ -328,6 +351,7 @@ func (f *clusterFixture) start(t *testing.T, index int, endpoint string) *cluste
 	node := &clusterNode{command: command, input: input, output: &bytes.Buffer{}}
 	command.Stdout = node.output
 	command.Stderr = node.output
+
 	if err := command.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -383,12 +407,18 @@ func (f *clusterFixture) startThree(t *testing.T, endpoints [3]string) []*cluste
 
 	for i := range nodes {
 		nodes[i] = f.start(t, i, endpoints[i])
+
 		if pids[nodes[i].ready.PID] {
 			t.Fatal("applications share a process ID")
 		}
 
 		pids[nodes[i].ready.PID] = true
-		request, err := http.NewRequestWithContext(f.ctx, http.MethodGet, nodes[i].ready.URL+"/health/ready", nil)
+		request, err := http.NewRequestWithContext(
+			f.ctx,
+			http.MethodGet,
+			nodes[i].ready.URL+"/health/ready",
+			nil,
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -440,6 +470,7 @@ func (f *clusterFixture) restart(
 	}
 
 	replacements := f.startThree(t, endpoints)
+
 	for i, node := range replacements {
 		if node.ready.PID == nodes[i].ready.PID {
 			t.Fatal("restart reused the original process")
@@ -457,13 +488,18 @@ func (f *clusterFixture) open(t *testing.T, node *clusterNode) wallet.Snapshot {
 		t.Fatal(err)
 	}
 
-	body := fmt.Sprintf(`{"playerId":%q,"initialBalance":{"amount":"100.00","currency":"BRL"}}`, playerID.String())
+	body := fmt.Sprintf(
+		`{"playerId":%q,"initialBalance":{"amount":"100.00","currency":"BRL"}}`,
+		playerID.String(),
+	)
 	status, response := request(t, f.client, node.ready.URL+"/wallets", f.internalToken, "", body)
+
 	if status != http.StatusCreated {
 		t.Fatalf("open cluster wallet: status %d", status)
 	}
 
 	var state wallet.Snapshot
+
 	if err := json.Unmarshal(response, &state); err != nil {
 		t.Fatal(err)
 	}
@@ -471,7 +507,12 @@ func (f *clusterFixture) open(t *testing.T, node *clusterNode) wallet.Snapshot {
 	return state
 }
 
-func clusterInput(t *testing.T, state wallet.Snapshot, kind wager.Kind, amount string) wager.Input {
+func clusterInput(
+	t *testing.T,
+	state wallet.Snapshot,
+	kind wager.Kind,
+	amount string,
+) wager.Input {
 	t.Helper()
 
 	value, err := money.New(amount, money.BRL)
@@ -505,7 +546,12 @@ func (f *clusterFixture) submit(
 		return application.Result{}, 0, err
 	}
 
-	request, err := http.NewRequestWithContext(f.ctx, http.MethodPost, node.ready.URL+"/wagering/transactions", bytes.NewReader(body))
+	request, err := http.NewRequestWithContext(
+		f.ctx,
+		http.MethodPost,
+		node.ready.URL+"/wagering/transactions",
+		bytes.NewReader(body),
+	)
 	if err != nil {
 		return application.Result{}, 0, err
 	}
@@ -521,6 +567,7 @@ func (f *clusterFixture) submit(
 	defer func() {
 		err = errors.Join(err, response.Body.Close())
 	}()
+
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
 		return application.Result{}, response.StatusCode, err
 	}
@@ -538,12 +585,21 @@ func (f *clusterFixture) assertWallet(
 	t.Helper()
 
 	for _, node := range nodes {
-		status, body := request(t, f.client, node.ready.URL+"/wallets/"+state.ID+"/reconciliation", f.internalToken, "", "")
+		status, body := request(
+			t,
+			f.client,
+			node.ready.URL+"/wallets/"+state.ID+"/reconciliation",
+			f.internalToken,
+			"",
+			"",
+		)
+
 		if status != http.StatusOK {
 			t.Fatalf("cluster reconciliation status = %d", status)
 		}
 
 		var result application.Reconciliation
+
 		if err := json.Unmarshal(body, &result); err != nil {
 			t.Fatal(err)
 		}
@@ -553,7 +609,11 @@ func (f *clusterFixture) assertWallet(
 			t.Fatal(err)
 		}
 
-		if !result.Consistent || amount != balance {
+		if !result.Consistent {
+			t.Fatalf("cluster balance = %s, consistent=%t; want %s", amount, result.Consistent, balance)
+		}
+
+		if amount != balance {
 			t.Fatalf("cluster balance = %s, consistent=%t; want %s", amount, result.Consistent, balance)
 		}
 

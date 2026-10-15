@@ -27,10 +27,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/google/uuid"
 
-	"jungle/internal/platform/auth"
 	"jungle/internal/platform/config"
+	"jungle/internal/platform/messageauth"
 	"jungle/internal/platform/queue"
 	"jungle/internal/platform/telemetry"
+	"jungle/internal/testsupport/sqsidentity"
 	"jungle/internal/wagering/application"
 	"jungle/internal/wagering/domain/money"
 	"jungle/internal/wagering/domain/wager"
@@ -64,7 +65,7 @@ type redriveScenario struct {
 func TestInvalidMessageReachesDLQ(t *testing.T) {
 	testMessageRedrive(t, redriveScenario{
 		unknownField: true,
-		credential:   recoveryToken,
+		credential:   recoverySignature,
 		wantProvider: "provider-a",
 		reason:       "invalid_request",
 	})
@@ -73,7 +74,7 @@ func TestInvalidMessageReachesDLQ(t *testing.T) {
 func TestDatabaseFailureRedriveAndRecovery(t *testing.T) {
 	testMessageRedrive(t, redriveScenario{
 		failLedgerWrites: true,
-		credential:       recoveryToken,
+		credential:       recoverySignature,
 		wantProvider:     "provider-a",
 		reason:           "unavailable",
 	})
@@ -86,11 +87,11 @@ func TestUnauthorizedMessageReachesDLQ(t *testing.T) {
 		wantProvider string
 	}{
 		{name: "missing credential"},
-		{name: "invalid signature", credential: tamperedRecoveryToken},
+		{name: "invalid signature", credential: tamperedRecoverySignature},
 		{
 			name: "another provider",
-			credential: func(t *testing.T, issuer string) string {
-				return recoveryProviderToken(t, issuer, "provider-b")
+			credential: func(t *testing.T, body string) string {
+				return sqsidentity.Signature(t, "provider-b", body)
 			},
 			wantProvider: "provider-b",
 		},
@@ -107,10 +108,10 @@ func TestUnauthorizedMessageReachesDLQ(t *testing.T) {
 	}
 }
 
-func tamperedRecoveryToken(t *testing.T, issuer string) string {
+func tamperedRecoverySignature(t *testing.T, body string) string {
 	t.Helper()
 
-	parts := strings.Split(recoveryToken(t, issuer), ".")
+	parts := strings.Split(recoverySignature(t, body), ".")
 	if len(parts) != 3 {
 		t.Fatal("IdP did not return a compact JWT")
 	}
@@ -145,14 +146,14 @@ func testMessageRedrive(t *testing.T, scenario redriveScenario) {
 	}
 
 	cfg.SQSEndpoint = proxyURL
-	client := queue.New(cfg)
+	client := queue.New(cfg, nil)
 	if err := client.Start(ctx); err != nil {
 		t.Fatal(err)
 	}
 
 	var logs bytes.Buffer
 	logger := slog.New(slog.NewJSONHandler(&logs, nil))
-	store := postgres.New(fixture.pool, logger)
+	store := postgres.New(fixture.pool, logger, nil)
 	initial, err := money.New("100.00", money.BRL)
 	if err != nil {
 		t.Fatal(err)
@@ -205,14 +206,14 @@ func testMessageRedrive(t *testing.T, scenario redriveScenario) {
 
 	accessToken := ""
 	if scenario.credential != nil {
-		accessToken = scenario.credential(t, os.Getenv("OIDC_ISSUER"))
+		accessToken = scenario.credential(t, string(body))
 	}
 
-	verifier := auth.New(cfg)
-	principal, credentialErr := verifier.Verify(ctx, accessToken)
+	verifier := sqsidentity.Verifier(t)
+	principal, credentialErr := verifier.Verify(string(body), accessToken)
 
 	if scenario.wantProvider == "" {
-		if !errors.Is(credentialErr, auth.ErrUnauthorized) {
+		if !errors.Is(credentialErr, messageauth.ErrUnauthorized) {
 			t.Fatalf("credential verification = %v; want unauthorized", credentialErr)
 		}
 	} else {
@@ -229,7 +230,7 @@ func testMessageRedrive(t *testing.T, scenario redriveScenario) {
 
 	if accessToken != "" {
 		attributes = map[string]types.MessageAttributeValue{
-			"AccessToken": {DataType: aws.String("String"), StringValue: aws.String(accessToken)},
+			"MessageSignature": {DataType: aws.String("String"), StringValue: aws.String(accessToken)},
 		}
 	}
 
@@ -251,14 +252,14 @@ func testMessageRedrive(t *testing.T, scenario redriveScenario) {
 	}
 
 	metrics := &telemetry.Metrics{}
-	workers := New(store, client, application.New(store), verifier, logger, metrics, cfg)
+	consumer := NewConsumer(client, application.New(store), verifier, logger, metrics)
 	runCtx, stop := context.WithCancel(ctx)
 	done := make(chan struct{})
 
 	go func() {
 		defer close(done)
 
-		workers.consume(runCtx)
+		consumer.run(runCtx)
 	}()
 
 	// Join before inspecting logs or deleting queues, including assertion failures.
@@ -312,7 +313,7 @@ func testMessageRedrive(t *testing.T, scenario redriveScenario) {
 			QueueUrl:              aws.String(dlqURL),
 			MaxNumberOfMessages:   1,
 			WaitTimeSeconds:       10,
-			MessageAttributeNames: []string{"AccessToken"},
+			MessageAttributeNames: []string{"MessageSignature"},
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -330,7 +331,7 @@ func testMessageRedrive(t *testing.T, scenario redriveScenario) {
 		t.Fatal("DLQ changed the original message body")
 	}
 
-	attribute, exists := deadLetter.MessageAttributes["AccessToken"]
+	attribute, exists := deadLetter.MessageAttributes["MessageSignature"]
 	if exists != (accessToken != "") {
 		t.Fatal("DLQ changed whether the credential attribute is present")
 	}
@@ -383,7 +384,13 @@ func testMessageRedrive(t *testing.T, scenario redriveScenario) {
 
 	for {
 		var record struct {
-			Reason string `json:"reason"`
+			Reason          string `json:"reason"`
+			Operation       string `json:"operation"`
+			BrokerMessageID string `json:"brokerMessageId"`
+			MessageID       string `json:"messageId"`
+			CorrelationID   string `json:"correlationId"`
+			WalletID        string `json:"walletId"`
+			ProviderID      string `json:"providerId"`
 		}
 		err := decoder.Decode(&record)
 		if errors.Is(err, io.EOF) {
@@ -396,6 +403,32 @@ func testMessageRedrive(t *testing.T, scenario redriveScenario) {
 
 		if record.Reason == scenario.reason {
 			reasons++
+
+			if record.Operation != "sqs_consume" {
+				t.Fatalf("retry log operation = %s", record.Operation)
+			}
+
+			if record.BrokerMessageID != aws.ToString(sent.MessageId) {
+				t.Fatal("retry log lost the broker message identity")
+			}
+
+			if !scenario.unknownField {
+				if record.MessageID != envelope.MessageID {
+					t.Fatal("retry log lost the envelope message identity")
+				}
+
+				if record.CorrelationID != envelope.MessageID {
+					t.Fatal("retry log lost the consumer correlation identity")
+				}
+
+				if record.WalletID != state.ID {
+					t.Fatal("retry log lost the requested wallet identity")
+				}
+
+				if record.ProviderID != scenario.wantProvider {
+					t.Fatalf("logged provider = %s, want verified provider %s", record.ProviderID, scenario.wantProvider)
+				}
+			}
 		}
 	}
 
@@ -669,4 +702,10 @@ func observeRetries(
 	t.Cleanup(server.Close)
 
 	return server.URL, observations, deletes
+}
+
+func recoverySignature(t *testing.T, body string) string {
+	t.Helper()
+
+	return sqsidentity.Signature(t, "provider-a", body)
 }

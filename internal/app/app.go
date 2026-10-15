@@ -12,6 +12,7 @@ import (
 	"jungle/internal/platform/config"
 	"jungle/internal/platform/database"
 	"jungle/internal/platform/httpserver"
+	"jungle/internal/platform/messageauth"
 	"jungle/internal/platform/queue"
 	"jungle/internal/platform/telemetry"
 	"jungle/internal/wagering"
@@ -30,6 +31,7 @@ func Options() fx.Option {
 		telemetry.Module,
 		database.Module,
 		auth.Module,
+		messageauth.Module,
 		queue.Module,
 		wagering.Module,
 		httpserver.Module,

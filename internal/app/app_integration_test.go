@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -24,6 +25,8 @@ import (
 	"go.uber.org/fx"
 
 	"jungle/internal/app"
+	"jungle/internal/platform/telemetry"
+	"jungle/internal/testsupport/sqsidentity"
 	"jungle/internal/wagering/httpapi"
 	"jungle/internal/wagering/postgres"
 	"jungle/migrations"
@@ -37,6 +40,8 @@ func TestRealDependenciesAndLifecycle(t *testing.T) {
 	if databaseURL == "" || issuer == "" || endpoint == "" {
 		t.Skip("TEST_DATABASE_URL, TEST_OIDC_ISSUER and TEST_SQS_ENDPOINT are required")
 	}
+
+	sqsidentity.Configure(t)
 
 	id, err := uuid.NewRandom()
 	if err != nil {
@@ -105,11 +110,17 @@ func TestRealDependenciesAndLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	broker := sqs.NewFromConfig(awsCfg, func(options *sqs.Options) { options.BaseEndpoint = aws.String(endpoint) })
+	broker := sqs.NewFromConfig(
+		awsCfg,
+		func(options *sqs.Options) { options.BaseEndpoint = aws.String(endpoint) },
+	)
 	queueURLs := make([]string, 0, 2)
 
 	for _, name := range []string{os.Getenv("SQS_REQUESTS_QUEUE"), os.Getenv("SQS_EVENTS_QUEUE")} {
-		out, err := broker.CreateQueue(t.Context(), &sqs.CreateQueueInput{QueueName: aws.String(name), Attributes: map[string]string{"FifoQueue": "true"}})
+		out, err := broker.CreateQueue(
+			t.Context(),
+			&sqs.CreateQueueInput{QueueName: aws.String(name), Attributes: map[string]string{"FifoQueue": "true"}},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -129,8 +140,9 @@ func TestRealDependenciesAndLifecycle(t *testing.T) {
 
 	var api *httpapi.API
 	var store *postgres.Store
+	var metrics *telemetry.Metrics
 
-	process := fx.New(app.Options(), fx.NopLogger, fx.Populate(&api, &store))
+	process := fx.New(app.Options(), fx.NopLogger, fx.Populate(&api, &store, &metrics))
 	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
 	defer cancel()
 
@@ -159,7 +171,10 @@ func TestRealDependenciesAndLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	payload := fmt.Sprintf(`{"playerId":%q,"initialBalance":{"amount":"100.00","currency":"BRL"}}`, playerID.String())
+	payload := fmt.Sprintf(
+		`{"playerId":%q,"initialBalance":{"amount":"100.00","currency":"BRL"}}`,
+		playerID.String(),
+	)
 	if status, _ := request(t, client, server.URL+"/wallets", "", "", payload); status != http.StatusUnauthorized {
 		t.Fatalf("missing token status = %d", status)
 	}
@@ -181,14 +196,60 @@ func TestRealDependenciesAndLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	operation := fmt.Sprintf(`{"providerId":"provider-a","externalTransactionId":"bet","playerId":%q,"walletId":%q,"roundId":"round","gameId":"game","kind":"BET","money":{"amount":"25.00","currency":"BRL"}}`, playerID.String(), wallet.ID)
-	status, body = request(t, client, server.URL+"/wagering/transactions", providerToken, "bet-key", operation)
+	operation := fmt.Sprintf(
+		`{"providerId":"provider-a","externalTransactionId":"bet","playerId":%q,"walletId":%q,"roundId":"round","gameId":"game","kind":"BET","money":{"amount":"25.00","currency":"BRL"}}`,
+		playerID.String(),
+		wallet.ID,
+	)
+	status, body = request(
+		t,
+		client,
+		server.URL+"/wagering/transactions",
+		providerToken,
+		"bet-key",
+		operation,
+	)
 	if status != http.StatusOK {
 		t.Fatalf("bet = %d: %s", status, body)
 	}
 
-	if status, _ := request(t, client, server.URL+"/wagering/transactions", otherToken, "bet-key", operation); status != http.StatusForbidden {
+	var result struct {
+		TransactionID string `json:"transactionId"`
+	}
+
+	if err := json.Unmarshal(body, &result); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("transaction query provider isolation", func(t *testing.T) {
+		assertTransactionQueryIsolation(t, client, server.URL, issuer, result.TransactionID)
+	})
+
+	t.Run("expired Keycloak credential", func(t *testing.T) {
+		assertExpiredKeycloakCredential(t, client, server.URL, issuer, operation, store, wallet.ID, result.TransactionID)
+	})
+
+	if status, _ := request(
+		t,
+		client,
+		server.URL+"/wagering/transactions",
+		otherToken,
+		"bet-key",
+		operation,
+	); status != http.StatusForbidden {
 		t.Fatalf("cross-provider replay status = %d", status)
+	}
+
+	conflicting := strings.Replace(operation, `"25.00"`, `"26.00"`, 1)
+	if status, _ := request(
+		t,
+		client,
+		server.URL+"/wagering/transactions",
+		providerToken,
+		"bet-key",
+		conflicting,
+	); status != http.StatusConflict {
+		t.Fatalf("conflicting replay status = %d", status)
 	}
 
 	var data map[string]json.RawMessage
@@ -205,7 +266,7 @@ func TestRealDependenciesAndLifecycle(t *testing.T) {
 	_, err = broker.SendMessage(t.Context(), &sqs.SendMessageInput{
 		QueueUrl: aws.String(queueURLs[0]), MessageBody: aws.String(string(envelope)),
 		MessageGroupId: aws.String(wallet.ID), MessageDeduplicationId: aws.String("first-delivery"),
-		MessageAttributes: map[string]types.MessageAttributeValue{"AccessToken": {DataType: aws.String("String"), StringValue: aws.String(providerToken)}},
+		MessageAttributes: map[string]types.MessageAttributeValue{"MessageSignature": {DataType: aws.String("String"), StringValue: aws.String(sqsidentity.Signature(t, "provider-a", string(envelope)))}},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -215,12 +276,49 @@ func TestRealDependenciesAndLifecycle(t *testing.T) {
 		// An inbox row proves the SQS path actually received the duplicate.
 		var count int
 
-		if err := admin.QueryRow(t.Context(), "SELECT count(*) FROM "+schema+".inbox WHERE message_id='bet-via-sqs'").Scan(&count); err != nil {
+		if err := admin.QueryRow(
+			t.Context(),
+			"SELECT count(*) FROM "+schema+".inbox WHERE message_id='bet-via-sqs'",
+		).Scan(&count); err != nil {
 			t.Fatal(err)
 		}
 
 		return count == 1
 	})
+
+	await(t, func() bool { return metrics.Duplicates.Load() > 0 && metrics.Published.Load() > 0 })
+
+	response, err := client.Get(server.URL + "/metrics")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Errorf("close metrics response: %v", err)
+		}
+	}()
+
+	exposition, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("metrics status = %d", response.StatusCode)
+	}
+
+	for _, sample := range []string{
+		`jungle_processing_duration_seconds_count{status="PROCESSED",transport="http"} 1`,
+		`jungle_processing_duration_seconds_count{status="PROCESSED",transport="sqs"} 1`,
+		`jungle_conflicts_total{transport="http"} 1`,
+		`jungle_sqs_messages_total{action="published"}`,
+		`jungle_http_request_duration_seconds_count{method="POST",route="/wagering/transactions",status="409"} 1`,
+	} {
+		if !strings.Contains(string(exposition), sample) {
+			t.Fatalf("missing real workflow metric %s", sample)
+		}
+	}
 
 	reconciliation, err := store.Reconcile(t.Context(), wallet.ID)
 	if err != nil {
@@ -236,7 +334,10 @@ func TestRealDependenciesAndLifecycle(t *testing.T) {
 	}
 
 	await(t, func() bool {
-		messages, err := broker.ReceiveMessage(t.Context(), &sqs.ReceiveMessageInput{QueueUrl: aws.String(queueURLs[1]), MaxNumberOfMessages: 1})
+		messages, err := broker.ReceiveMessage(
+			t.Context(),
+			&sqs.ReceiveMessageInput{QueueUrl: aws.String(queueURLs[1]), MaxNumberOfMessages: 1},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -276,7 +377,14 @@ func token(t *testing.T, issuer, clientID string) string {
 	return result.AccessToken
 }
 
-func request(t *testing.T, client *http.Client, address, token, key, body string) (int, []byte) {
+func request(
+	t *testing.T,
+	client *http.Client,
+	address string,
+	token string,
+	key string,
+	body string,
+) (int, []byte) {
 	t.Helper()
 
 	r, err := http.NewRequestWithContext(t.Context(), http.MethodPost, address, bytes.NewBufferString(body))

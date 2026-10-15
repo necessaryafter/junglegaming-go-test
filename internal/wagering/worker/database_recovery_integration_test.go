@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 
-	"jungle/internal/platform/auth"
+	"jungle/internal/platform/messageauth"
 	"jungle/internal/wagering/domain/wager"
 	"jungle/internal/wagering/postgres"
 )
@@ -79,7 +79,7 @@ func recoverDeadLetter(
 	message types.Message,
 	envelope requested,
 	store *postgres.Store,
-	verifier *auth.Verifier,
+	verifier *messageauth.Verifier,
 ) {
 	t.Helper()
 
@@ -93,8 +93,8 @@ func recoverDeadLetter(
 	}
 
 	// Reuse the original credential and bytes; only the database fault and transport deduplication ID change.
-	attribute := message.MessageAttributes["AccessToken"]
-	principal, err := verifier.Verify(fixture.ctx, aws.ToString(attribute.StringValue))
+	attribute := message.MessageAttributes["MessageSignature"]
+	principal, err := verifier.Verify(aws.ToString(message.Body), aws.ToString(attribute.StringValue))
 	if err != nil {
 		t.Fatal(err)
 	}

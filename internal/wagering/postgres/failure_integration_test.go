@@ -26,14 +26,18 @@ func TestFailedPolicyAndReplay(t *testing.T) {
 		t.Fatalf("status = %s, want PENDING_REFERENCE", pending.Status)
 	}
 
+	const failTransaction = `
+    UPDATE wager_transactions
+    SET
+        status = 'FAILED',
+        failure_code = $2
+    WHERE id = $1`
+
 	for _, code := range []string{"RETRIES_EXHAUSTED", "DATABASE_UNAVAILABLE", "INSUFFICIENT_BALANCE"} {
 		t.Run(code, func(t *testing.T) {
-			_, err := f.pool.Exec(t.Context(), `
-                UPDATE wager_transactions
-                SET status = 'FAILED', failure_code = $2
-                WHERE id = $1`, pending.TransactionID, code)
 			var pgErr *pgconn.PgError
 
+			_, err := f.pool.Exec(t.Context(), failTransaction, pending.TransactionID, code)
 			if !errors.As(err, &pgErr) {
 				t.Fatalf("unsupported FAILED cause error = %v", err)
 			}
@@ -46,10 +50,7 @@ func TestFailedPolicyAndReplay(t *testing.T) {
 
 	// Simulate an audited operational decision after confirming irrecoverable
 	// loss. No automatic database-error or retry-count classifier can do this.
-	_, err = f.pool.Exec(t.Context(), `
-        UPDATE wager_transactions
-        SET status = 'FAILED', failure_code = $2
-        WHERE id = $1`, pending.TransactionID, wager.InfrastructureDataLoss)
+	_, err = f.pool.Exec(t.Context(), failTransaction, pending.TransactionID, wager.InfrastructureDataLoss)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,12 +66,20 @@ func TestFailedPolicyAndReplay(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !replay.IdempotentReplay || replay.Status != wager.Failed {
+		if !replay.IdempotentReplay {
+			t.Fatalf("FAILED result was not recognized as a replay: %+v", replay)
+		}
+
+		if replay.Status != wager.Failed {
 			t.Fatalf("FAILED replay = %+v", replay)
 		}
 
-		if replay.TransactionID != pending.TransactionID || replay.FailureCode != wager.InfrastructureDataLoss {
-			t.Fatalf("FAILED replay changed identity or cause: %+v", replay)
+		if replay.TransactionID != pending.TransactionID {
+			t.Fatalf("FAILED replay changed identity: %+v", replay)
+		}
+
+		if replay.FailureCode != wager.InfrastructureDataLoss {
+			t.Fatalf("FAILED replay changed cause: %+v", replay)
 		}
 
 		if replay.Balance != pending.Balance {
@@ -78,10 +87,14 @@ func TestFailedPolicyAndReplay(t *testing.T) {
 		}
 	}
 
-	_, err = f.pool.Exec(t.Context(), `
-        UPDATE wager_transactions
-        SET status = 'PENDING', failure_code = ''
-        WHERE id = $1`, pending.TransactionID)
+	const reopenTransaction = `
+    UPDATE wager_transactions
+    SET
+        status = 'PENDING',
+        failure_code = ''
+    WHERE id = $1`
+
+	_, err = f.pool.Exec(t.Context(), reopenTransaction, pending.TransactionID)
 	if err == nil {
 		t.Fatal("FAILED transaction was reopened")
 	}

@@ -34,6 +34,7 @@ def call(url, token, method="GET", payload=None, key=None):
 
     with response:
         return response.status, json.load(response)
+    return None
 
 
 def token(client_id):
@@ -45,6 +46,7 @@ def token(client_id):
 
     with urllib.request.urlopen(ISSUER + "/protocol/openid-connect/token", data=data, timeout=10) as response:
         return json.load(response)["access_token"]
+    return None
 
 
 def require(condition, message):

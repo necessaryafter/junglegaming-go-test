@@ -128,6 +128,7 @@ func (fault *clusterFault) proxy(t *testing.T, endpoint string, node int) string
 				MessageGroupID         string `json:"MessageGroupId"`
 				ReceiptHandle          string
 			}
+
 			if err := json.Unmarshal(body, &request); err != nil {
 				http.Error(w, "decode SQS request", http.StatusBadRequest)
 
@@ -174,6 +175,7 @@ func (fault *clusterFault) proxy(t *testing.T, endpoint string, node int) string
 
 				response.Body = io.NopCloser(bytes.NewReader(body))
 				var received struct{ Messages []types.Message }
+
 				if err := json.Unmarshal(body, &received); err != nil {
 					return err
 				}

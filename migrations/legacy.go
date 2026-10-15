@@ -10,7 +10,7 @@ import (
 // changes and the replacement of version rows are atomic; dirty histories from
 // golang-migrate are never repaired or forced by this compatibility bridge.
 func adoptLegacyHistory(ctx context.Context, connection *pgx.Conn) error {
-	const query = `
+	const legacyHistoryQuery = `
     DO $$
     DECLARE
         latest INTEGER;
@@ -21,6 +21,7 @@ func adoptLegacyHistory(ctx context.Context, connection *pgx.Conn) error {
         IF to_regclass('schema_migrations') IS NULL THEN
             RETURN;
         END IF;
+
         IF EXISTS (
             SELECT 1
             FROM pg_attribute
@@ -32,10 +33,17 @@ func adoptLegacyHistory(ctx context.Context, connection *pgx.Conn) error {
         END IF;
 
         LOCK TABLE schema_migrations IN ACCESS EXCLUSIVE MODE;
-        SELECT COALESCE(MAX(version), 0), COUNT(*), COALESCE(MIN(version), 1)
+        SELECT
+            COALESCE(MAX(version), 0),
+            COUNT(*),
+            COALESCE(MIN(version), 1)
         INTO latest, applied, first
         FROM schema_migrations;
-        IF first < 1 OR latest <> applied THEN
+        IF first < 1 THEN
+            RAISE EXCEPTION 'inconsistent legacy migration history';
+        END IF;
+
+        IF latest <> applied THEN
             RAISE EXCEPTION 'inconsistent legacy migration history';
         END IF;
 
@@ -46,7 +54,7 @@ func adoptLegacyHistory(ctx context.Context, connection *pgx.Conn) error {
     END;
     $$`
 
-	_, err := connection.Exec(ctx, query)
+	_, err := connection.Exec(ctx, legacyHistoryQuery)
 
 	return err
 }

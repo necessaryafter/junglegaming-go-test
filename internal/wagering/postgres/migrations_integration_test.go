@@ -55,15 +55,35 @@ func TestMigrationAdoptsLegacyHistory(t *testing.T) {
 	var dirty bool
 	var count int
 
-	err = connection.QueryRow(t.Context(), `
-        SELECT version, dirty, (SELECT COUNT(*) FROM schema_migrations)
-        FROM schema_migrations`).Scan(&version, &dirty, &count)
+	const historyQuery = `
+    SELECT
+        version,
+        dirty,
+        (
+            SELECT COUNT(*)
+            FROM schema_migrations
+        )
+    FROM schema_migrations`
+
+	err = connection.QueryRow(t.Context(), historyQuery).Scan(
+		&version,
+		&dirty,
+		&count,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if version != 3 || dirty || count != 1 {
-		t.Fatalf("adopted history = version %d, dirty %v, rows %d", version, dirty, count)
+	if version != 3 {
+		t.Fatalf("adopted history version = %d, want 3", version)
+	}
+
+	if dirty {
+		t.Fatal("adopted history is dirty")
+	}
+
+	if count != 1 {
+		t.Fatalf("adopted history rows = %d, want 1", count)
 	}
 
 	assertBalance(t, f.stores[0], state.ID, "100.00", 1)
@@ -92,9 +112,9 @@ func TestFailedMigrationRequiresInvestigation(t *testing.T) {
 	}
 
 	for _, direction := range []string{"up", "down"} {
-		err := migrations.Apply(t.Context(), connection.Conn(), direction)
 		var dirty migrate.ErrDirty
 
+		err := migrations.Apply(t.Context(), connection.Conn(), direction)
 		if !errors.As(err, &dirty) {
 			t.Fatalf("migration %s error = %v, want ErrDirty", direction, err)
 		}
@@ -112,9 +132,11 @@ func TestReadinessRequiresFailedPolicy(t *testing.T) {
 		t.Fatalf("readiness after migrations: %v", err)
 	}
 
-	_, err := f.pool.Exec(t.Context(), `
-        ALTER TABLE wager_transactions
-        DROP CONSTRAINT transaction_failed_policy`)
+	const removeFailurePolicy = `
+    ALTER TABLE wager_transactions
+    DROP CONSTRAINT transaction_failed_policy`
+
+	_, err := f.pool.Exec(t.Context(), removeFailurePolicy)
 	if err != nil {
 		t.Fatal(err)
 	}

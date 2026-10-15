@@ -45,6 +45,7 @@ func setupPermissions(t *testing.T, existing bool) permissionFixture {
 	t.Helper()
 
 	address := os.Getenv("TEST_DATABASE_URL")
+
 	if address == "" {
 		t.Skip("TEST_DATABASE_URL is required for real PostgreSQL integration tests")
 	}
@@ -83,7 +84,10 @@ func setupPermissions(t *testing.T, existing bool) permissionFixture {
 			}
 		}
 
-		if _, err := admin.Exec(ctx, "DROP DATABASE IF EXISTS "+pgx.Identifier{databaseName}.Sanitize()+" WITH (FORCE)"); err != nil {
+		if _, err := admin.Exec(
+			ctx,
+			"DROP DATABASE IF EXISTS "+pgx.Identifier{databaseName}.Sanitize()+" WITH (FORCE)",
+		); err != nil {
 			t.Errorf("drop permission fixture database: %v", err)
 		}
 
@@ -98,7 +102,10 @@ func setupPermissions(t *testing.T, existing bool) permissionFixture {
 		}
 	})
 
-	if _, err := admin.Exec(t.Context(), "CREATE DATABASE "+pgx.Identifier{databaseName}.Sanitize()); err != nil {
+	if _, err := admin.Exec(
+		t.Context(),
+		"CREATE DATABASE "+pgx.Identifier{databaseName}.Sanitize(),
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -126,7 +133,8 @@ func setupPermissions(t *testing.T, existing bool) permissionFixture {
 			t.Fatal(err)
 		}
 
-		fixture.wallet = open(t, postgres.New(pool, slog.Default()))
+		t.Cleanup(pool.Close)
+		fixture.wallet = open(t, postgres.New(pool, slog.Default(), nil))
 		pool.Close()
 	}
 
@@ -137,7 +145,14 @@ func setupPermissions(t *testing.T, existing bool) permissionFixture {
         set_config('jungle.migration_password', $3, false),
         set_config('jungle.runtime_password', $4, false)`
 
-	if _, err := fixture.admin.Exec(t.Context(), settings, migrationRole, runtimeRole, migrationPassword, runtimePassword); err != nil {
+	if _, err := fixture.admin.Exec(
+		t.Context(),
+		settings,
+		migrationRole,
+		runtimeRole,
+		migrationPassword,
+		runtimePassword,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -150,11 +165,13 @@ func setupPermissions(t *testing.T, existing bool) permissionFixture {
 			// Reprovisioning must clear an earlier administrator's direct grant
 			// and login default that would otherwise bypass financial triggers.
 			query := "GRANT SET ON PARAMETER session_replication_role TO " + pgx.Identifier{runtimeRole}.Sanitize()
+
 			if _, err := fixture.admin.Exec(t.Context(), query); err != nil {
 				t.Fatal(err)
 			}
 
 			query = "ALTER ROLE " + pgx.Identifier{runtimeRole}.Sanitize() + " SET session_replication_role = replica"
+
 			if _, err := fixture.admin.Exec(t.Context(), query); err != nil {
 				t.Fatal(err)
 			}
@@ -173,7 +190,11 @@ func setupPermissions(t *testing.T, existing bool) permissionFixture {
 		t.Fatalf("migrate with non-superuser owner: %v", err)
 	}
 
-	if _, err := fixture.migrator.Exec(t.Context(), "SELECT set_config('jungle.runtime_role', $1, false)", runtimeRole); err != nil {
+	if _, err := fixture.migrator.Exec(
+		t.Context(),
+		"SELECT set_config('jungle.runtime_role', $1, false)",
+		runtimeRole,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -197,23 +218,26 @@ func setupPermissions(t *testing.T, existing bool) permissionFixture {
 		t.Fatal(err)
 	}
 
-	fixture.store = postgres.New(fixture.runtime, slog.Default())
+	fixture.store = postgres.New(fixture.runtime, slog.Default(), nil)
 
 	return fixture
 }
 
 func TestDatabaseRoleSeparation(t *testing.T) {
-	for _, existing := range []bool{false, true} {
-		name := "fresh database"
-		if existing {
-			name = "existing database preserves data"
-		}
+	tests := []struct {
+		name     string
+		existing bool
+	}{
+		{name: "fresh database"},
+		{name: "existing database preserves data", existing: true},
+	}
 
-		t.Run(name, func(t *testing.T) {
-			f := setupPermissions(t, existing)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := setupPermissions(t, tt.existing)
 			state := f.wallet
 
-			if !existing {
+			if !tt.existing {
 				state = open(t, f.store)
 			}
 
@@ -244,6 +268,7 @@ func TestDatabaseRoleSeparation(t *testing.T) {
 
 			refund := command(t, state, wager.Refund, "20.00")
 			refund.Input.ReferenceExternalTransactionID = bet.Input.ExternalTransactionID
+
 			if _, err := f.store.Submit(t.Context(), refund); err != nil {
 				t.Fatalf("runtime reversal: %v", err)
 			}
@@ -255,7 +280,12 @@ func TestDatabaseRoleSeparation(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if _, err := f.admin.Exec(t.Context(), "UPDATE wager_transactions SET next_attempt_at = now() WHERE id = $1", waiting.TransactionID); err != nil {
+			const scheduleReferenceRetry = `
+    UPDATE wager_transactions
+    SET next_attempt_at = now()
+    WHERE id = $1`
+
+			if _, err := f.admin.Exec(t.Context(), scheduleReferenceRetry, waiting.TransactionID); err != nil {
 				t.Fatal(err)
 			}
 
@@ -288,6 +318,21 @@ func TestDatabaseRoleSeparation(t *testing.T) {
 				t.Fatalf("migration owner DDL: %v", err)
 			}
 
+			const createRuntimeTrigger = `
+    CREATE TRIGGER runtime_trigger
+    BEFORE INSERT ON wallet_ledger
+    FOR EACH ROW
+    EXECUTE FUNCTION reject_financial_mutation()`
+
+			const replaceConsistencyTrigger = `
+    CREATE OR REPLACE FUNCTION check_wallet_ledger()
+    RETURNS TRIGGER
+    LANGUAGE plpgsql AS $$
+    BEGIN
+        RETURN NULL;
+    END;
+    $$`
+
 			denied := []struct {
 				name string
 				sql  string
@@ -299,8 +344,8 @@ func TestDatabaseRoleSeparation(t *testing.T) {
 				{name: "drop table", sql: "DROP TABLE wallet_ledger"},
 				{name: "disable triggers", sql: "ALTER TABLE wallet_ledger DISABLE TRIGGER ALL"},
 				{name: "drop trigger", sql: "DROP TRIGGER ledger_immutable ON wallet_ledger"},
-				{name: "create trigger", sql: "CREATE TRIGGER runtime_trigger BEFORE INSERT ON wallet_ledger FOR EACH ROW EXECUTE FUNCTION reject_financial_mutation()"},
-				{name: "replace trigger function", sql: "CREATE OR REPLACE FUNCTION check_wallet_ledger() RETURNS trigger LANGUAGE plpgsql AS 'BEGIN RETURN NULL; END'"},
+				{name: "create trigger", sql: createRuntimeTrigger},
+				{name: "replace trigger function", sql: replaceConsistencyTrigger},
 				{name: "disable replication triggers", sql: "SET session_replication_role = replica"},
 				{name: "assume migration owner", sql: "SET ROLE " + pgx.Identifier{f.migrationRole}.Sanitize()},
 				{name: "create role", sql: "CREATE ROLE runtime_escalation"},
@@ -315,9 +360,9 @@ func TestDatabaseRoleSeparation(t *testing.T) {
 
 			for _, tt := range denied {
 				t.Run(tt.name, func(t *testing.T) {
-					_, err := f.runtime.Exec(t.Context(), tt.sql)
 					var pgErr *pgconn.PgError
 
+					_, err := f.runtime.Exec(t.Context(), tt.sql)
 					if !errors.As(err, &pgErr) {
 						t.Fatalf("restricted operation error = %v, want PostgreSQL permission denial", err)
 					}
@@ -328,9 +373,14 @@ func TestDatabaseRoleSeparation(t *testing.T) {
 				})
 			}
 
-			_, err = f.runtime.Exec(t.Context(), "UPDATE wallets SET balance = balance + 1 WHERE id = $1", state.ID)
+			const inconsistentBalanceUpdate = `
+    UPDATE wallets
+    SET balance = balance + 1
+    WHERE id = $1`
+
 			var pgErr *pgconn.PgError
 
+			_, err = f.runtime.Exec(t.Context(), inconsistentBalanceUpdate, state.ID)
 			if !errors.As(err, &pgErr) {
 				t.Fatalf("financial consistency trigger error = %v", err)
 			}

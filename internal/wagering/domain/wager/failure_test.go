@@ -36,7 +36,9 @@ func TestFailurePolicy(t *testing.T) {
 				t.Run(tt.name, func(t *testing.T) {
 					now := time.Now().UTC()
 					request := input(t, wager.Refund, "1.00")
+
 					request.ReferenceExternalTransactionID = "original"
+
 					transaction, err := wager.New("id", "key", request, request.Money, now)
 					if err != nil {
 						t.Fatal(err)
@@ -59,7 +61,11 @@ func TestFailurePolicy(t *testing.T) {
 							if err != nil {
 								t.Fatalf("valid failure outcome rejected: %v", err)
 							}
-						} else if !errors.Is(err, wager.ErrInvalid) {
+
+							continue
+						}
+
+						if !errors.Is(err, wager.ErrInvalid) {
 							t.Fatalf("unsupported failure outcome error = %v, want ErrInvalid", err)
 						}
 					}

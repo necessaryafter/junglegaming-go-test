@@ -19,6 +19,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"jungle/internal/testsupport/sqsidentity"
 	"jungle/migrations"
 )
 
@@ -46,6 +47,8 @@ func setupRecoveryWithin(t *testing.T, timeout time.Duration) recoveryFixture {
 	if databaseURL == "" || issuer == "" || endpoint == "" {
 		t.Skip("TEST_DATABASE_URL, TEST_OIDC_ISSUER and TEST_SQS_ENDPOINT are required")
 	}
+
+	sqsidentity.Configure(t)
 
 	ctx, cancel := context.WithTimeout(t.Context(), timeout)
 	t.Cleanup(cancel)

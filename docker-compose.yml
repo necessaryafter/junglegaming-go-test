@@ -10,10 +10,14 @@ x-app: &app
     OIDC_JWKS_URL: http://keycloak:8080/realms/jungle/protocol/openid-connect/certs
     OIDC_AUDIENCE: jungle-api
     AWS_REGION: us-east-1
-    AWS_ACCESS_KEY_ID: test
-    AWS_SECRET_ACCESS_KEY: test
+    AWS_SHARED_CREDENTIALS_FILE: /run/sqs/credentials
+    SQS_PRODUCER_KEYS_FILE: /run/sqs/producers.json
     SQS_ENDPOINT: http://localstack:4566
+  volumes:
+    - sqs-runtime:/run/sqs:ro
   depends_on:
+    queue-bootstrap:
+      condition: service_completed_successfully
     db-grants:
       condition: service_completed_successfully
     keycloak:
@@ -147,10 +151,63 @@ services:
       retries: 30
     restart: unless-stopped
 
-  localstack:
-    image: docker.io/localstack/localstack:4.0.3
+  queue-bootstrap:
+    image: docker.io/ministackorg/ministack:1.5.27
+    user: "0:0"
+    entrypoint: ["python", "/opt/jungle/bootstrap.py"]
     environment:
-      SERVICES: sqs
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      SQS_ENDPOINT: http://localstack:4566
+    volumes:
+      - ./docker/sqs:/opt/jungle:ro
+      - sqs-runtime:/runtime
+      - sqs-provider-a:/provider-a
+      - sqs-provider-b:/provider-b
+    depends_on:
+      localstack:
+        condition: service_healthy
+
+  producer-a:
+    build: .
+    profiles: [tools]
+    entrypoint: ["publish"]
+    environment:
+      AWS_REGION: us-east-1
+      AWS_SHARED_CREDENTIALS_FILE: /run/producer/credentials
+      SQS_ENDPOINT: http://localstack:4566
+      SQS_SIGNING_KEY_ID: provider-a-v1
+      SQS_SIGNING_KEY_FILE: /run/producer/signing.pem
+    volumes:
+      - sqs-provider-a:/run/producer:ro
+    depends_on:
+      queue-bootstrap:
+        condition: service_completed_successfully
+
+  producer-b:
+    build: .
+    profiles: [tools]
+    entrypoint: ["publish"]
+    environment:
+      AWS_REGION: us-east-1
+      AWS_SHARED_CREDENTIALS_FILE: /run/producer/credentials
+      SQS_ENDPOINT: http://localstack:4566
+      SQS_SIGNING_KEY_ID: provider-b-v1
+      SQS_SIGNING_KEY_FILE: /run/producer/signing.pem
+    volumes:
+      - sqs-provider-b:/run/producer:ro
+    depends_on:
+      queue-bootstrap:
+        condition: service_completed_successfully
+
+  localstack:
+    image: docker.io/ministackorg/ministack:1.5.27
+    environment:
+      SERVICES: sqs,iam,sts,cloudwatch
+      AUTH: "true"
+      PERSIST_STATE: "1"
+      STATE_DIR: /var/lib/ministack
       AWS_DEFAULT_REGION: us-east-1
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test
@@ -159,6 +216,7 @@ services:
       - "127.0.0.1:${LOCALSTACK_PORT:-4566}:4566"
     volumes:
       - ./docker/localstack/init-sqs.sh:/etc/localstack/init/ready.d/init-sqs.sh:ro
+      - sqs-state:/var/lib/ministack
     healthcheck:
       test: ["CMD-SHELL", "test -f /tmp/jungle-sqs-ready && awslocal sqs list-queues >/dev/null"]
       interval: 5s
@@ -170,3 +228,7 @@ services:
 volumes:
   postgres-data:
   keycloak-db-data:
+  sqs-state:
+  sqs-runtime:
+  sqs-provider-a:
+  sqs-provider-b:

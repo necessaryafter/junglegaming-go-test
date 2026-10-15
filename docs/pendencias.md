@@ -6,8 +6,11 @@ A base está funcional, mas ainda não conclui o desafio. As decisões estão no
 
 ## O que já foi verificado
 
+- Logs dos workers: correlação entre consumo SQS e publicação, sucesso/replay/rejeição/pendência, tentativas de referência e falhas, sem credenciais ou payload financeiro. Veja os [campos e limites de correlação](observabilidade.md#logs-dos-workers).
+
 - Testes unitários: dinheiro, carteira/ledger, tipos externos, hash, estados, autorização e JWTs assinados.
 - Integração real: PostgreSQL, IdP e SQS; migrations; composição e start/stop do Fx; cruzamento HTTP/SQS.
+- Autorização HTTP: token real do Keycloak aceito antes da expiração e rejeitado depois dela, sem persistir uma nova aposta; isolamento entre provedores nas consultas por ID e por provedor/ID externo, sem expor dados nas respostas negadas. Cobertura em `TestRealDependenciesAndLifecycle` e configuração no [README](../README.md#testes).
 - Concorrência: 50 duplicatas, disputa de saldo, três pools independentes e outbox concorrente/abandonada.
 - Matriz de reversões e referências: tipos permitidos, identidade, valores, duplicidade, concorrência, saldo insuficiente, replay, backoff e expiração. Veja a [cobertura detalhada](matriz-reversoes.md).
 - Recuperação do consumidor após commit e antes de delete: processo encerrado à força, expiração real de visibilidade e replay em outro processo, sem novos efeitos financeiros. Veja o [cenário reproduzível](recuperacao-consumidor.md).
@@ -33,7 +36,9 @@ infraestrutura real. A cobertura e os limites estão descritos na
   classificador automático nem ferramenta administrativa para registrar essa decisão.
   Falhas recuperáveis fazem rollback/503 ou retry; mensagens inválidas ou sem
   autorização seguem retry/redrive.
-- Faltam histogramas, métricas completas de SQS/DLQ e conflitos, dashboards e tracing.
+- Histogramas, métricas de SQS/DLQ, backlog e conflitos estão implementados e
+  cobertos por testes. Veja o [catálogo e limites da coleta](observabilidade.md).
+  Faltam dashboards, alertas provisionados e tracing.
 - As validações financeiras no banco agregam dados por carteira; seu custo precisa ser medido em carga.
 - O Compose separa administrador, migrator e runtime, com
   [permissões verificadas em PostgreSQL real](adr/0012-permissoes-do-banco.md).

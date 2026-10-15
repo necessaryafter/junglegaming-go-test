@@ -2,3 +2,6 @@
 /coverage.out
 .env
 *.test
+
+# Exported local SQS credentials and signing material.
+/.local/

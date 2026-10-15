@@ -79,7 +79,7 @@ func setup(t *testing.T) fixture {
 		}
 
 		t.Cleanup(pool.Close)
-		result.stores = append(result.stores, postgres.New(pool, slog.New(slog.NewTextHandler(os.Stderr, nil))))
+		result.stores = append(result.stores, postgres.New(pool, slog.New(slog.NewTextHandler(os.Stderr, nil)), nil))
 		result.pool = pool
 	}
 

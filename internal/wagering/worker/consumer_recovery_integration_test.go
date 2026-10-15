@@ -27,10 +27,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"jungle/internal/platform/auth"
 	"jungle/internal/platform/config"
 	"jungle/internal/platform/queue"
 	"jungle/internal/platform/telemetry"
+	"jungle/internal/testsupport/sqsidentity"
 	"jungle/internal/wagering/application"
 	"jungle/internal/wagering/domain/money"
 	"jungle/internal/wagering/domain/wager"
@@ -60,9 +60,9 @@ func TestConsumerRecoveryProcess(t *testing.T) {
 	defer pool.Close()
 
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
-	store := postgres.New(pool, logger)
-	verifier := auth.New(cfg)
-	client := queue.New(cfg)
+	store := postgres.New(pool, logger, nil)
+	verifier := sqsidentity.Verifier(t)
+	client := queue.New(cfg, nil)
 	if err := client.Start(ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestConsumerRecoveryProcess(t *testing.T) {
 		MaxNumberOfMessages:         1,
 		WaitTimeSeconds:             10,
 		VisibilityTimeout:           2,
-		MessageAttributeNames:       []string{"AccessToken"},
+		MessageAttributeNames:       []string{"MessageSignature"},
 		MessageSystemAttributeNames: []types.MessageSystemAttributeName{types.MessageSystemAttributeNameApproximateReceiveCount},
 	})
 	if err != nil {
@@ -102,8 +102,8 @@ func TestConsumerRecoveryProcess(t *testing.T) {
 	}
 
 	metrics := &telemetry.Metrics{}
-	workers := New(store, client, application.New(store), verifier, logger, metrics, cfg)
-	workers.handle(ctx, message)
+	consumer := NewConsumer(client, application.New(store), verifier, logger, metrics)
+	consumer.handle(ctx, message)
 
 	if mode == "crash" {
 		t.Fatal("consumer escaped the delete failpoint")
@@ -133,7 +133,7 @@ func TestConsumerRecoversAfterCommitBeforeDelete(t *testing.T) {
 	endpoint := fixture.endpoint
 
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
-	store := postgres.New(pool, logger)
+	store := postgres.New(pool, logger, nil)
 	initial, err := money.New("100.00", money.BRL)
 	if err != nil {
 		t.Fatal(err)
@@ -172,14 +172,14 @@ func TestConsumerRecoversAfterCommitBeforeDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	accessToken := recoveryToken(t, os.Getenv("OIDC_ISSUER"))
+	accessToken := sqsidentity.Signature(t, "provider-a", string(body))
 	_, err = broker.SendMessage(ctx, &sqs.SendMessageInput{
 		QueueUrl:               aws.String(requestsURL),
 		MessageBody:            aws.String(string(body)),
 		MessageGroupId:         aws.String(state.ID),
 		MessageDeduplicationId: aws.String("single-send"),
 		MessageAttributes: map[string]types.MessageAttributeValue{
-			"AccessToken": {DataType: aws.String("String"), StringValue: aws.String(accessToken)},
+			"MessageSignature": {DataType: aws.String("String"), StringValue: aws.String(accessToken)},
 		},
 	})
 	if err != nil {

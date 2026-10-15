@@ -18,6 +18,7 @@ type Config struct {
 	OIDCJWKSURL         string
 	SQSRegion           string
 	SQSEndpoint         string
+	ProducerKeysFile    string
 	RequestsQueue       string
 	EventsQueue         string
 	OperationTimeout    time.Duration
@@ -29,7 +30,8 @@ func Load() (Config, error) {
 		HTTPAddress: value("HTTP_ADDRESS", ":8081"), DatabaseURL: os.Getenv("DATABASE_URL"),
 		OIDCIssuer: os.Getenv("OIDC_ISSUER"), OIDCAudience: value("OIDC_AUDIENCE", "jungle-api"),
 		OIDCJWKSURL: os.Getenv("OIDC_JWKS_URL"), SQSRegion: value("AWS_REGION", "us-east-1"),
-		SQSEndpoint: os.Getenv("SQS_ENDPOINT"), RequestsQueue: value("SQS_REQUESTS_QUEUE", "wager-transactions.fifo"),
+		ProducerKeysFile: os.Getenv("SQS_PRODUCER_KEYS_FILE"),
+		SQSEndpoint:      os.Getenv("SQS_ENDPOINT"), RequestsQueue: value("SQS_REQUESTS_QUEUE", "wager-transactions.fifo"),
 		EventsQueue: value("SQS_EVENTS_QUEUE", "wager-events.fifo"), OperationTimeout: 10 * time.Second,
 	}
 

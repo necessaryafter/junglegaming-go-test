@@ -18,6 +18,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
+	"jungle/internal/testsupport/sqsidentity"
 	"jungle/internal/wagering/domain/wager"
 )
 
@@ -101,6 +102,7 @@ func TestThreeProcessesReferenceExpirationRestart(t *testing.T) {
 
 			// Keep the schedule uncommitted until all three original processes have been replaced.
 			nodes = fixture.restart(t, nodes, endpoints)
+
 			if err := schedule.Commit(fixture.ctx); err != nil {
 				t.Fatal(err)
 			}
@@ -117,7 +119,14 @@ func TestThreeProcessesReferenceExpirationRestart(t *testing.T) {
 			var code string
 
 			awaitCluster(t, fixture.ctx, func() bool {
-				if err := fixture.pool.QueryRow(fixture.ctx, rejectedReferenceQuery, transactionID.String()).Scan(&status, &code); err != nil {
+				if err := fixture.pool.QueryRow(
+					fixture.ctx,
+					rejectedReferenceQuery,
+					transactionID.String(),
+				).Scan(
+					&status,
+					&code,
+				); err != nil {
 					t.Fatal(err)
 				}
 
@@ -134,7 +143,11 @@ func TestThreeProcessesReferenceExpirationRestart(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if httpStatus != http.StatusOK || result.Status != wager.Processed {
+			if httpStatus != http.StatusOK {
+				t.Fatal("late reference did not process")
+			}
+
+			if result.Status != wager.Processed {
 				t.Fatal("late reference did not process")
 			}
 
@@ -145,11 +158,19 @@ func TestThreeProcessesReferenceExpirationRestart(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if httpStatus != http.StatusUnprocessableEntity || replay.FailureCode != "REFERENCE_NOT_FOUND" {
+			if httpStatus != http.StatusUnprocessableEntity {
 				t.Fatalf("expired replay = %+v, status %d", replay, httpStatus)
 			}
 
-			if !replay.IdempotentReplay || replay.TransactionID != transactionID.String() {
+			if replay.FailureCode != "REFERENCE_NOT_FOUND" {
+				t.Fatalf("expired replay = %+v, status %d", replay, httpStatus)
+			}
+
+			if !replay.IdempotentReplay {
+				t.Fatal("restart did not preserve the original expired transaction")
+			}
+
+			if replay.TransactionID != transactionID.String() {
 				t.Fatal("restart did not preserve the original expired transaction")
 			}
 
@@ -222,15 +243,25 @@ func TestThreeProcessesDatabaseRedriveRestart(t *testing.T) {
 	message := types.Message{
 		Body: aws.String(string(body)),
 		MessageAttributes: map[string]types.MessageAttributeValue{
-			"AccessToken": {DataType: aws.String("String"), StringValue: aws.String(fixture.providerToken)},
+			"MessageSignature": {DataType: aws.String("String"), StringValue: aws.String(sqsidentity.Signature(t, "provider-a", string(body)))},
 		},
 	}
 	originalID := sendClusterMessage(t, fixture, message, state.ID, "cluster-fault")
 
 	for count := 1; count <= 5; count++ {
 		received := awaitClusterDelivery(t, fixture.ctx, fault.received)
-		t.Logf("storage failure delivery %d, consumer %d, broker count %s", count, received.node, received.receiveCount)
-		if received.messageID != originalID || received.receiveCount != strconv.Itoa(count) {
+		t.Logf(
+			"storage failure delivery %d, consumer %d, broker count %s",
+			count,
+			received.node,
+			received.receiveCount,
+		)
+
+		if received.messageID != originalID {
+			t.Fatalf("fault delivery count = %s; want %d on original message", received.receiveCount, count)
+		}
+
+		if received.receiveCount != strconv.Itoa(count) {
 			t.Fatalf("fault delivery count = %s; want %d on original message", received.receiveCount, count)
 		}
 
@@ -245,7 +276,10 @@ func TestThreeProcessesDatabaseRedriveRestart(t *testing.T) {
 			var failures int
 			var called bool
 
-			if err := fixture.pool.QueryRow(fixture.ctx, failureCountQuery).Scan(&failures, &called); err != nil {
+			if err := fixture.pool.QueryRow(fixture.ctx, failureCountQuery).Scan(
+				&failures,
+				&called,
+			); err != nil {
 				t.Fatal(err)
 			}
 
@@ -267,7 +301,7 @@ func TestThreeProcessesDatabaseRedriveRestart(t *testing.T) {
 			QueueUrl:              aws.String(dlqURL),
 			MaxNumberOfMessages:   1,
 			WaitTimeSeconds:       10,
-			MessageAttributeNames: []string{"AccessToken"},
+			MessageAttributeNames: []string{"MessageSignature"},
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -297,6 +331,7 @@ func TestThreeProcessesDatabaseRedriveRestart(t *testing.T) {
 	t.Log("cluster restarted after removing the storage fault")
 	restoredID := sendClusterMessage(t, fixture, deadLetter, state.ID, "cluster-restored")
 	restored := awaitClusterDelivery(t, fixture.ctx, fault.deleted)
+
 	if restored.messageID != restoredID {
 		t.Fatalf("restored delivery ID = %s; want %s", restored.messageID, restoredID)
 	}
@@ -323,7 +358,12 @@ func TestThreeProcessesDatabaseRedriveRestart(t *testing.T) {
 	snapshot = clusterFinancialSnapshot(t, fixture, state.ID)
 	duplicateID := sendClusterMessage(t, fixture, deadLetter, state.ID, "cluster-duplicate")
 	duplicate := awaitClusterDelivery(t, fixture.ctx, fault.deleted)
-	if duplicate.messageID != duplicateID || duplicateID == restoredID {
+
+	if duplicate.messageID != duplicateID {
+		t.Fatal("broker did not deliver the duplicate to the application")
+	}
+
+	if duplicateID == restoredID {
 		t.Fatal("broker did not deliver the duplicate to the application")
 	}
 
@@ -333,12 +373,17 @@ func TestThreeProcessesDatabaseRedriveRestart(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if status != http.StatusOK || !replay.IdempotentReplay {
+		if status != http.StatusOK {
+			t.Fatal("HTTP replay did not preserve the SQS result")
+		}
+
+		if !replay.IdempotentReplay {
 			t.Fatal("HTTP replay did not preserve the SQS result")
 		}
 	}
 
 	nodes = fixture.restart(t, nodes, endpoints)
+
 	if !bytes.Equal(snapshot, clusterFinancialSnapshot(t, fixture, state.ID)) {
 		t.Fatal("duplicate or restart changed the recovered operation")
 	}
@@ -368,7 +413,10 @@ func configureClusterDLQ(t *testing.T, fixture *clusterFixture) string {
 		cleanup, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		if _, err := fixture.broker.DeleteQueue(cleanup, &sqs.DeleteQueueInput{QueueUrl: aws.String(address)}); err != nil {
+		if _, err := fixture.broker.DeleteQueue(
+			cleanup,
+			&sqs.DeleteQueueInput{QueueUrl: aws.String(address)},
+		); err != nil {
 			t.Errorf("delete cluster DLQ: %v", err)
 		}
 	})
