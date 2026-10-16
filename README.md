@@ -1,5 +1,8 @@
 # Jungle Gaming
 
+Implementação de um desafio técnico de processamento distribuído de apostas,
+conforme os requisitos do [DESAFIO.md](DESAFIO.md).
+
 Processamento distribuído de apostas em **Go + Uber Fx**, com PostgreSQL,
 Keycloak e SQS. HTTP e consumidor compartilham as garantias financeiras:
 Money exato, ledger imutável, idempotência persistente e transactional outbox.
