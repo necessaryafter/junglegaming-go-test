@@ -1,0 +1,65 @@
+{
+  "started_at": "2026-10-16T00:56:03.063179+00:00",
+  "duration_seconds": 1.0904408010001134,
+  "command": "python3 scripts/concurrency.py --duplicates 1000 --concurrency 16",
+  "exit_code": 0,
+  "rendering": "real stdout; original timing; final frame held for 5 seconds",
+  "events": [
+    {
+      "seconds": 0.2761120699997264,
+      "line": "READY: three independent API processes"
+    },
+    {
+      "seconds": 0.35080567699969833,
+      "line": "WALLET: 100.00 BRL | one BET: 80.00 BRL"
+    },
+    {
+      "seconds": 0.35083954999936395,
+      "line": "SEND: 1000 copies | 16 concurrent clients | 3 APIs"
+    },
+    {
+      "seconds": 0.5059377849993325,
+      "line": "RECEIVED: 200/1000"
+    },
+    {
+      "seconds": 0.6050003109994577,
+      "line": "RECEIVED: 400/1000"
+    },
+    {
+      "seconds": 0.7147580450000532,
+      "line": "RECEIVED: 600/1000"
+    },
+    {
+      "seconds": 0.8114852339995196,
+      "line": "RECEIVED: 800/1000"
+    },
+    {
+      "seconds": 0.9061966079998456,
+      "line": "RECEIVED: 1000/1000"
+    },
+    {
+      "seconds": 0.9115563999994265,
+      "line": "PASS: 1 processed | 999 replays | 1 debit"
+    },
+    {
+      "seconds": 0.9115821709992815,
+      "line": "RECONCILIATION: balance 20.00 BRL | opening + debit = 2 entries"
+    },
+    {
+      "seconds": 0.9115969069998755,
+      "line": "RACE: two distinct BETs of 80.00 BRL against 100.00 BRL"
+    },
+    {
+      "seconds": 1.0765126619999137,
+      "line": "PASS: 1 processed | 1 INSUFFICIENT_BALANCE | balance 20.00 BRL"
+    },
+    {
+      "seconds": 1.0765313089996198,
+      "line": "PASS: both wallets reconcile; no duplicate financial movement"
+    },
+    {
+      "seconds": 1.0765446489995156,
+      "line": "Created test wallets: 86f0cb82-1ea0-47f3-862c-cb2e8cd6b118 f7261891-fd70-4548-bd46-f035305cdf72"
+    }
+  ]
+}

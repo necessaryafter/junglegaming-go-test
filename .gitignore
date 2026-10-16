@@ -5,3 +5,7 @@
 
 # Exported local SQS credentials and signing material.
 /.local/
+
+# Python load tooling.
+__pycache__/
+*.pyc

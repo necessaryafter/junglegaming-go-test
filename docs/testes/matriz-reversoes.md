@@ -36,5 +36,7 @@ go test -tags=integration -race ./internal/wagering/postgres \
   -count=1
 ```
 
-A recuperação após interrupção entre três processos e a matriz de transporte
-HTTP/SQS com redrive continuam nas [pendências](../pendencias.md).
+A recuperação após interrupção está coberta na
+[matriz com três processos](recuperacao-tres-processos.md). Os cenários de
+transporte HTTP/SQS, redrive e reprocessamento estão documentados nos testes de
+[DLQ](redrive-dlq.md) e de [recuperação após falha de banco](recuperacao-banco-dlq.md).

@@ -1,0 +1,39 @@
+discovery.docker "jungle" {
+  host = "unix:///var/run/docker.sock"
+  refresh_interval = "5s"
+  filter {
+    name = "label"
+    values = ["com.docker.compose.project=" + sys.env("COMPOSE_PROJECT_NAME")]
+  }
+}
+
+discovery.relabel "applications" {
+  targets = discovery.docker.jungle.targets
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    regex = "app(-[23])?"
+    action = "keep"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label = "service"
+  }
+  rule {
+    target_label = "job"
+    replacement = "jungle"
+  }
+}
+
+loki.source.docker "applications" {
+  host = "unix:///var/run/docker.sock"
+  targets = discovery.relabel.applications.output
+  labels = {}
+  refresh_interval = "5s"
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

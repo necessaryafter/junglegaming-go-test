@@ -19,4 +19,38 @@ HTTP usa o IdP externo Keycloak; SQS usa políticas IAM segregadas e assinaturas
 duráveis Ed25519 por produtor, conforme a [ADR 0006](docs/adr/0006-autenticacao-e-autorizacao.md).
 O ambiente local executa MiniStack com avaliação IAM habilitada.
 
-Veja [limitações e verificações pendentes](docs/pendencias.md).
+## Escopo e limites operacionais
+
+- **Validação financeira:** triggers diferidos conferem saldo, versão e ledger
+  no commit. Uma BET com movimento agenda quatro verificações; as agregações
+  têm custo proporcional ao histórico e ao plano SQL. Os
+  [relatórios de carga](docs/testes/carga.md) e a
+  [comparação dos índices](docs/testes/otimizacao-validacoes.md) registram os
+  custos observados. As amostras locais não estabelecem capacidade máxima nem
+  ganho sustentado da migration 4.
+- **Outbox:** a publicação é assíncrona e pode ficar atrás da entrada HTTP sob
+  carga. O evento permanece no PostgreSQL para retry; aceite HTTP e aceite pelo
+  SQS são etapas distintas. As medições registram a espera pela drenagem.
+- **FAILED:** representa perda irrecuperável comprovada por investigação
+  operacional. O serviço valida essa política, mas não inclui classificador
+  automático nem endpoint administrativo para registrar a decisão. Falhas
+  recuperáveis seguem rollback, retry ou redrive. Veja a
+  [política de falhas permanentes](docs/adr/0010-falhas-permanentes.md).
+- **Observabilidade:** a entrega inclui logs JSON, histogramas, métricas de
+  SQS/DLQ, Prometheus, Grafana e o perfil Loki + Alloy. Alertas provisionados e
+  tracing distribuído estão fora do escopo desta entrega. O
+  [catálogo de diagnóstico](docs/guias/observabilidade.md) descreve os limites
+  de coleta e correlação.
+- **Credenciais e operação:** os valores do Compose são locais. Ambientes
+  externos precisam fornecer identidades, segredos e políticas próprios. O
+  bootstrap preserva as chaves locais e reaplica grants; rotação e revogação
+  permanentes exigem adaptar o provisionamento. Veja os
+  [procedimentos de identidade](docs/adr/0006-autenticacao-e-autorizacao.md#operação-e-limites)
+  e a [separação de permissões do banco](docs/adr/0012-permissoes-do-banco.md).
+
+## Evidências
+
+A [reprodução documentada](docs/testes/evidencias-entrega.md) registra checkout
+limpo, dependências reais, autorização, concorrência e recuperação. Foi usada a
+sequência de Podman Compose; Docker Compose v2 não foi executado diretamente
+nesse ambiente. Os cenários e comandos estão no [índice de testes](docs/README.md#testes).

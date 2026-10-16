@@ -27,7 +27,8 @@ com indicadores de sucesso, disponibilidade e timestamps para distinguir zero
 real de ausência de dados. Veja o [catálogo de métricas](../guias/observabilidade.md).
 O Compose provisiona Prometheus, Grafana e uma dashboard operacional com filtro
 por instância. Backlogs compartilhados usam `max` entre réplicas; taxas de
-contadores por processo são somadas. Alertas provisionados e tracing ainda faltam.
+contadores por processo são somadas. Alertas provisionados e tracing distribuído
+estão fora do escopo desta entrega.
 
 ## Motivo
 

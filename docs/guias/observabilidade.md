@@ -255,3 +255,46 @@ depende da saúde da API para iniciar, permitindo inspecionar sua indisponibilid
 `docker compose down` preserva os volumes; `down -v` apaga também esses dados.
 
 Alertas provisionados e tracing ainda não foram implementados.
+
+## Logs no Grafana
+
+O perfil `logs` adiciona Loki 3.7.0 e Alloy 1.14.0. Alloy descobre somente os
+containers `app`, `app-2` e `app-3` do projeto Compose configurado e envia seus
+logs JSON ao Loki. IDs de operação permanecem no JSON, sem labels por carteira,
+provedor ou evento. Loki retém sete dias em volume local. A fonte `Loki` e o
+painel **Logs das aplicações** da dashboard são provisionados automaticamente.
+
+```sh
+docker compose --profile logs up -d loki alloy
+```
+
+Para Podman rootless, habilite sua API compatível e exporte o socket:
+
+```sh
+systemctl --user start podman.socket
+export CONTAINER_SOCKET="$XDG_RUNTIME_DIR/podman/podman.sock"
+podman-compose --profile logs up --no-deps -d loki alloy
+```
+
+Se usar outro nome de projeto, exporte também `COMPOSE_PROJECT_NAME` com esse
+nome para o filtro de descoberta do Alloy. O coletor usa acesso ao socket do
+engine de containers, destinado ao ambiente local; o mount `:ro` não restringe
+as operações da API. Grafana e Loki ficam publicados somente em loopback.
+As aplicações não recebem esse socket.
+
+Se o Grafana já estava iniciado, reinicie somente seu serviço para recarregar o
+provisionamento, ou use sua API administrativa de reload. Na interface, abra
+**Explore → Loki** e consulte:
+
+```logql
+{job="jungle"} | json
+{job="jungle",service="app-2"} | json | operation="outbox_publish"
+{job="jungle"} | json | level=~"WARN|ERROR"
+```
+
+O backend de métricas continua sendo Prometheus. O Loki não recebe payloads
+financeiros completos ou credenciais: preserva os campos selecionados pelos
+loggers da aplicação. Os comandos de carga estão em [carga](../testes/carga.md).
+A configuração segue os componentes oficiais
+[discovery.docker](https://grafana.com/docs/alloy/latest/reference/components/discovery/discovery.docker/) e
+[loki.source.docker](https://grafana.com/docs/alloy/latest/reference/components/loki/loki.source.docker/).

@@ -74,8 +74,8 @@ func TestMigrationAdoptsLegacyHistory(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if version != 3 {
-		t.Fatalf("adopted history version = %d, want 3", version)
+	if version != 4 {
+		t.Fatalf("adopted history version = %d, want 4", version)
 	}
 
 	if dirty {

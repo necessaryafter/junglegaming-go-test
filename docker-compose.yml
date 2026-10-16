@@ -92,6 +92,33 @@ services:
       retries: 10
     restart: unless-stopped
 
+  loki:
+    image: docker.io/grafana/loki:3.7.0
+    profiles: [logs]
+    command: ["-config.file=/etc/loki/loki.yml"]
+    ports:
+      - "127.0.0.1:${LOKI_PORT:-3100}:3100"
+    volumes:
+      - ./docker/loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki-data:/loki
+    restart: unless-stopped
+
+  alloy:
+    image: docker.io/grafana/alloy:v1.14.0
+    profiles: [logs]
+    user: "0:0"
+    command: ["run", "--storage.path=/var/lib/alloy", "/etc/alloy/config.alloy"]
+    environment:
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-jungle}
+    volumes:
+      - ./docker/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - ${CONTAINER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
+      - alloy-data:/var/lib/alloy
+    depends_on:
+      loki:
+        condition: service_started
+    restart: unless-stopped
+
   migrate:
     build: .
     entrypoint: ["migrate"]
@@ -268,6 +295,8 @@ services:
     restart: unless-stopped
 
 volumes:
+  loki-data:
+  alloy-data:
   prometheus-data:
   grafana-data:
   postgres-data:

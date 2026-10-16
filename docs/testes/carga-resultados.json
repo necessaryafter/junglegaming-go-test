@@ -1,0 +1,3129 @@
+{
+  "environment": {
+    "started_at": "2026-10-16T00:25:43.724895+00:00",
+    "revision": "52ae055e8a146d2ff9a7aac3d36b0dad9bd97b5e",
+    "working_tree_modified": true,
+    "python": "3.14.7",
+    "platform": "Linux-7.2.4-3-cachyos-x86_64-with-glibc2.44",
+    "logical_cpus": 12,
+    "cpu_model": "AMD Ryzen 5 5500",
+    "memory_total": "16248580 kB",
+    "configuration": {
+      "apis": "http://localhost:8081,http://localhost:8082,http://localhost:8083",
+      "issuer": "http://localhost:8080/realms/jungle",
+      "histories": "0,100,1000",
+      "wallet_counts": "1,8",
+      "concurrency": 16,
+      "duration": 15,
+      "warmup": 1,
+      "output_dir": ".local/load/matrix-20261015"
+    },
+    "runs": [
+      {
+        "case": "write-w1-h0",
+        "report": "write-w1-h0.json",
+        "exit_code": 0
+      },
+      {
+        "case": "write-w8-h0",
+        "report": "write-w8-h0.json",
+        "exit_code": 1
+      },
+      {
+        "case": "write-w1-h100",
+        "report": "write-w1-h100.json",
+        "exit_code": 0
+      },
+      {
+        "case": "write-w8-h100",
+        "report": "write-w8-h100.json",
+        "exit_code": 0
+      },
+      {
+        "case": "write-w1-h1000",
+        "report": "write-w1-h1000.json",
+        "exit_code": 0
+      },
+      {
+        "case": "write-w8-h1000",
+        "report": "write-w8-h1000.json",
+        "exit_code": 1
+      },
+      {
+        "case": "replay-w1-h0",
+        "report": "replay-w1-h0.json",
+        "exit_code": 0
+      },
+      {
+        "case": "conflict-w1-h0",
+        "report": "conflict-w1-h0.json",
+        "exit_code": 0
+      }
+    ],
+    "ended_at": "2026-10-16T00:41:34.088300+00:00",
+    "passed": false
+  },
+  "containers": [
+    {
+      "container": "jungle_app_1",
+      "image_name": "localhost/jungle_app:latest",
+      "image_id": "52d6239e6de5a3d8c4425128e2980649703d9cdff4dceb7813ce5e5e5d5f8ad4",
+      "pid": 83327,
+      "memory_limit_bytes": 0,
+      "nano_cpu_limit": 0
+    },
+    {
+      "container": "jungle_app-2_1",
+      "image_name": "localhost/jungle_app-2:latest",
+      "image_id": "52d6239e6de5a3d8c4425128e2980649703d9cdff4dceb7813ce5e5e5d5f8ad4",
+      "pid": 155223,
+      "memory_limit_bytes": 0,
+      "nano_cpu_limit": 0
+    },
+    {
+      "container": "jungle_app-3_1",
+      "image_name": "localhost/jungle_app-3:latest",
+      "image_id": "52d6239e6de5a3d8c4425128e2980649703d9cdff4dceb7813ce5e5e5d5f8ad4",
+      "pid": 155316,
+      "memory_limit_bytes": 0,
+      "nano_cpu_limit": 0
+    },
+    {
+      "container": "jungle_postgres_1",
+      "image_name": "docker.io/library/postgres:17.2-alpine",
+      "image_id": "2bf60600670fa512beeded60a7abe589fedd3fb23bd7ffaa5e5ed5d77488eda4",
+      "pid": 66898,
+      "memory_limit_bytes": 0,
+      "nano_cpu_limit": 0
+    },
+    {
+      "container": "jungle_localstack_1",
+      "image_name": "docker.io/ministackorg/ministack:1.5.27",
+      "image_id": "44fdd4738e5d7af49ff0f60627fb865f1e30c79752be5b2c8a22ff29ed985f1d",
+      "pid": 71022,
+      "memory_limit_bytes": 0,
+      "nano_cpu_limit": 0
+    },
+    {
+      "container": "jungle_keycloak_1",
+      "image_name": "quay.io/keycloak/keycloak:26.8.0",
+      "image_id": "e2508edb35d7b3b39468c3e4e77da4e3c8dca8968b055259d60ccfbd29d65e59",
+      "pid": 67486,
+      "memory_limit_bytes": 0,
+      "nano_cpu_limit": 0
+    },
+    {
+      "container": "jungle_prometheus_1",
+      "image_name": "docker.io/prom/prometheus:v3.8.1",
+      "image_id": "20a11eec2fec912184d2acaf1c3052ee163919feb3c8a0217fa6607b686b9b4c",
+      "pid": 66801,
+      "memory_limit_bytes": 0,
+      "nano_cpu_limit": 0
+    },
+    {
+      "container": "jungle_grafana_1",
+      "image_name": "docker.io/grafana/grafana:12.3.1",
+      "image_id": "5cdab57891eadfc05b9c76519b4b1be6ba2ac1c3bb8fdedd90fdcf7fc9b40242",
+      "pid": 67200,
+      "memory_limit_bytes": 0,
+      "nano_cpu_limit": 0
+    },
+    {
+      "container": "jungle_loki_1",
+      "image_name": "docker.io/grafana/loki:3.7.0",
+      "image_id": "6ea410afab1b8e0d360d87bd3c3ea27ab1b2af0027badb6f18758c5a6efc3a17",
+      "pid": 151437,
+      "memory_limit_bytes": 0,
+      "nano_cpu_limit": 0
+    },
+    {
+      "container": "jungle_alloy_1",
+      "image_name": "docker.io/grafana/alloy:v1.14.0",
+      "image_id": "0544946252fd35047697ec2ae576f25d3ab0b4eda5fdd277596adc616c18fd79",
+      "pid": 151510,
+      "memory_limit_bytes": 0,
+      "nano_cpu_limit": 0
+    }
+  ],
+  "measurement_model": "closed loop; 3 applications; one trial per case; shared local host",
+  "initial_matrix_passed": false,
+  "diagnostic_failures": [
+    {
+      "case": "write-w8-h0",
+      "stage": "post_measurement",
+      "reason": "outbox not confirmed empty within 60 seconds; HTTP and reconciliation passed"
+    },
+    {
+      "case": "write-w8-h1000",
+      "stage": "preparation",
+      "reason": "outbox not confirmed empty within 300 seconds; resumed using unchanged prepared wallets, with 600 seconds"
+    }
+  ],
+  "all_selected_http_and_financial_checks_passed": true,
+  "results": [
+    {
+      "run_id": "load-961178ae5ad74451885faf21c106cede",
+      "configuration": {
+        "apis": "http://localhost:8081,http://localhost:8082,http://localhost:8083",
+        "issuer": "http://localhost:8080/realms/jungle",
+        "scenario": "write",
+        "wallets": 1,
+        "history": 0,
+        "concurrency": 16,
+        "duration": 15.0,
+        "warmup": 1.0,
+        "max_requests": 100000,
+        "timeout": 15,
+        "drain_timeout": 60,
+        "output": ".local/load/matrix-20261015/write-w1-h0.json"
+      },
+      "started_at": "2026-10-16T00:25:54.192259+00:00",
+      "ended_at": "2026-10-16T00:26:09.704428+00:00",
+      "measurement_seconds": 15.507184308999967,
+      "requests": 486,
+      "requests_per_second": 31.34031235560528,
+      "latency_ms": {
+        "p50": 360.8400980001534,
+        "p95": 1422.9654079999818,
+        "p99": 2021.6577660003168
+      },
+      "http_statuses": {
+        "200": 486
+      },
+      "outcomes": {
+        "processed": 486
+      },
+      "errors": {},
+      "error_rate": 0.0,
+      "baseline": [
+        {
+          "wallet_id": "dec83764-99b3-4e1b-9d06-2609bff36ddc",
+          "minor": 99999951,
+          "version": 50
+        }
+      ],
+      "verification": [
+        {
+          "wallet_id": "dec83764-99b3-4e1b-9d06-2609bff36ddc",
+          "consistent": true,
+          "balance": {
+            "amount": "999994.65",
+            "currency": "BRL"
+          },
+          "version": 536,
+          "expected_minor_units": 99999465,
+          "checked_entries": 536
+        }
+      ],
+      "passed": true,
+      "case": "write-w1-h0",
+      "outbox_confirmation_seconds": 14.446452993999628,
+      "outbox_confirmed_empty": true,
+      "client_phase_telemetry": {
+        "outbox_oldest_seconds_max": 3.0,
+        "outbox_pending_max": 138.0,
+        "unavailable_samples": 0,
+        "counter_deltas": {
+          "http://localhost:8081 jungle_conflicts_total{transport=\"http\"}": 0,
+          "http://localhost:8082 jungle_conflicts_total{transport=\"http\"}": 0,
+          "http://localhost:8083 jungle_conflicts_total{transport=\"http\"}": 0
+        },
+        "counter_resets": []
+      },
+      "prometheus_phase_and_drain": {
+        "jungle_outbox_oldest_seconds_max": 3.0,
+        "jungle_outbox_pending_max": 138.0
+      },
+      "prometheus_window_end": "2026-10-16T00:26:24.650881+00:00",
+      "prometheus_freshness_filter": "statistics timestamp >= measurement started_at",
+      "outbox_age_observed_max_seconds": 3.0,
+      "http_and_financial_passed": true
+    },
+    {
+      "run_id": "load-6f15a1e835c149e0b84cb3bbfa612709",
+      "configuration": {
+        "apis": "http://localhost:8081,http://localhost:8082,http://localhost:8083",
+        "issuer": "http://localhost:8080/realms/jungle",
+        "scenario": "write",
+        "wallets": 8,
+        "history": 0,
+        "concurrency": 16,
+        "duration": 15.0,
+        "warmup": 1.0,
+        "max_requests": 100000,
+        "timeout": 15,
+        "drain_timeout": 60,
+        "output": ".local/load/matrix-20261015/write-w8-h0.json"
+      },
+      "started_at": "2026-10-16T00:26:48.537415+00:00",
+      "ended_at": "2026-10-16T00:27:03.839821+00:00",
+      "measurement_seconds": 15.287895364000178,
+      "requests": 2786,
+      "requests_per_second": 182.23567951416334,
+      "latency_ms": {
+        "p50": 63.280295000367914,
+        "p95": 205.7674620000398,
+        "p99": 513.3417540000664
+      },
+      "http_statuses": {
+        "200": 2786
+      },
+      "outcomes": {
+        "processed": 2786
+      },
+      "errors": {},
+      "error_rate": 0.0,
+      "baseline": [
+        {
+          "wallet_id": "40e3ae4b-1f01-41f3-9a9e-64e05dd025b3",
+          "minor": 99999969,
+          "version": 32
+        },
+        {
+          "wallet_id": "fb7eb81e-2cf1-430e-972a-a27025cee2a9",
+          "minor": 99999970,
+          "version": 31
+        },
+        {
+          "wallet_id": "9cfb9717-0d96-46f5-a9b0-c6136db58c41",
+          "minor": 99999970,
+          "version": 31
+        },
+        {
+          "wallet_id": "844f76ea-9bb1-4d0b-ab90-5ab49aacacc0",
+          "minor": 99999970,
+          "version": 31
+        },
+        {
+          "wallet_id": "8ca09ae7-d042-4331-8531-d86999608290",
+          "minor": 99999970,
+          "version": 31
+        },
+        {
+          "wallet_id": "4dcfe5e0-7401-4816-b038-a750870f1c37",
+          "minor": 99999970,
+          "version": 31
+        },
+        {
+          "wallet_id": "b7bf71a2-0771-4d9d-aa2e-27ad735a0d4d",
+          "minor": 99999970,
+          "version": 31
+        },
+        {
+          "wallet_id": "b8a92306-2195-4c8f-9e52-9667fec879ee",
+          "minor": 99999970,
+          "version": 31
+        }
+      ],
+      "verification": [
+        {
+          "wallet_id": "40e3ae4b-1f01-41f3-9a9e-64e05dd025b3",
+          "consistent": true,
+          "balance": {
+            "amount": "999996.20",
+            "currency": "BRL"
+          },
+          "version": 381,
+          "expected_minor_units": 99999620,
+          "checked_entries": 381
+        },
+        {
+          "wallet_id": "fb7eb81e-2cf1-430e-972a-a27025cee2a9",
+          "consistent": true,
+          "balance": {
+            "amount": "999996.21",
+            "currency": "BRL"
+          },
+          "version": 380,
+          "expected_minor_units": 99999621,
+          "checked_entries": 380
+        },
+        {
+          "wallet_id": "9cfb9717-0d96-46f5-a9b0-c6136db58c41",
+          "consistent": true,
+          "balance": {
+            "amount": "999996.22",
+            "currency": "BRL"
+          },
+          "version": 379,
+          "expected_minor_units": 99999622,
+          "checked_entries": 379
+        },
+        {
+          "wallet_id": "844f76ea-9bb1-4d0b-ab90-5ab49aacacc0",
+          "consistent": true,
+          "balance": {
+            "amount": "999996.22",
+            "currency": "BRL"
+          },
+          "version": 379,
+          "expected_minor_units": 99999622,
+          "checked_entries": 379
+        },
+        {
+          "wallet_id": "8ca09ae7-d042-4331-8531-d86999608290",
+          "consistent": true,
+          "balance": {
+            "amount": "999996.22",
+            "currency": "BRL"
+          },
+          "version": 379,
+          "expected_minor_units": 99999622,
+          "checked_entries": 379
+        },
+        {
+          "wallet_id": "4dcfe5e0-7401-4816-b038-a750870f1c37",
+          "consistent": true,
+          "balance": {
+            "amount": "999996.22",
+            "currency": "BRL"
+          },
+          "version": 379,
+          "expected_minor_units": 99999622,
+          "checked_entries": 379
+        },
+        {
+          "wallet_id": "b7bf71a2-0771-4d9d-aa2e-27ad735a0d4d",
+          "consistent": true,
+          "balance": {
+            "amount": "999996.22",
+            "currency": "BRL"
+          },
+          "version": 379,
+          "expected_minor_units": 99999622,
+          "checked_entries": 379
+        },
+        {
+          "wallet_id": "b8a92306-2195-4c8f-9e52-9667fec879ee",
+          "consistent": true,
+          "balance": {
+            "amount": "999996.22",
+            "currency": "BRL"
+          },
+          "version": 379,
+          "expected_minor_units": 99999622,
+          "checked_entries": 379
+        }
+      ],
+      "passed": false,
+      "case": "write-w8-h0",
+      "outbox_confirmation_seconds": 60.02846323799986,
+      "outbox_confirmed_empty": false,
+      "client_phase_telemetry": {
+        "outbox_oldest_seconds_max": 13.0,
+        "outbox_pending_max": 4744.0,
+        "unavailable_samples": 0,
+        "counter_deltas": {
+          "http://localhost:8081 jungle_conflicts_total{transport=\"http\"}": 0,
+          "http://localhost:8082 jungle_conflicts_total{transport=\"http\"}": 0,
+          "http://localhost:8083 jungle_conflicts_total{transport=\"http\"}": 0
+        },
+        "counter_resets": []
+      },
+      "prometheus_phase_and_drain": {
+        "jungle_outbox_oldest_seconds_max": 57.0,
+        "jungle_outbox_pending_max": 4744.0
+      },
+      "prometheus_window_end": "2026-10-16T00:28:04.368284+00:00",
+      "prometheus_freshness_filter": "statistics timestamp >= measurement started_at",
+      "outbox_age_observed_max_seconds": 57.0,
+      "http_and_financial_passed": true
+    },
+    {
+      "run_id": "load-fcc8acdcadb14762ad89389d9b910d1b",
+      "configuration": {
+        "apis": "http://localhost:8081,http://localhost:8082,http://localhost:8083",
+        "issuer": "http://localhost:8080/realms/jungle",
+        "scenario": "write",
+        "wallets": 1,
+        "history": 100,
+        "concurrency": 16,
+        "duration": 15.0,
+        "warmup": 1.0,
+        "max_requests": 100000,
+        "timeout": 15,
+        "drain_timeout": 60,
+        "output": ".local/load/matrix-20261015/write-w1-h100.json"
+      },
+      "started_at": "2026-10-16T00:29:09.149286+00:00",
+      "ended_at": "2026-10-16T00:29:24.700863+00:00",
+      "measurement_seconds": 15.547231426000508,
+      "requests": 441,
+      "requests_per_second": 28.36517884865925,
+      "latency_ms": {
+        "p50": 634.0840689999823,
+        "p95": 1323.3929099997113,
+        "p99": 1696.7893270002605
+      },
+      "http_statuses": {
+        "200": 441
+      },
+      "outcomes": {
+        "processed": 441
+      },
+      "errors": {},
+      "error_rate": 0.0,
+      "baseline": [
+        {
+          "wallet_id": "b7807e33-3040-4797-8804-91a0db00203b",
+          "minor": 100000067,
+          "version": 134
+        }
+      ],
+      "verification": [
+        {
+          "wallet_id": "b7807e33-3040-4797-8804-91a0db00203b",
+          "consistent": true,
+          "balance": {
+            "amount": "999996.26",
+            "currency": "BRL"
+          },
+          "version": 575,
+          "expected_minor_units": 99999626,
+          "checked_entries": 575
+        }
+      ],
+      "passed": true,
+      "case": "write-w1-h100",
+      "outbox_confirmation_seconds": 14.446658139000647,
+      "outbox_confirmed_empty": true,
+      "client_phase_telemetry": {
+        "outbox_oldest_seconds_max": 0.0,
+        "outbox_pending_max": 11.0,
+        "unavailable_samples": 0,
+        "counter_deltas": {
+          "http://localhost:8081 jungle_conflicts_total{transport=\"http\"}": 0,
+          "http://localhost:8082 jungle_conflicts_total{transport=\"http\"}": 0,
+          "http://localhost:8083 jungle_conflicts_total{transport=\"http\"}": 0
+        },
+        "counter_resets": []
+      },
+      "prometheus_phase_and_drain": {
+        "jungle_outbox_oldest_seconds_max": 0.0,
+        "jungle_outbox_pending_max": 11.0
+      },
+      "prometheus_window_end": "2026-10-16T00:29:39.647521+00:00",
+      "prometheus_freshness_filter": "statistics timestamp >= measurement started_at",
+      "outbox_age_observed_max_seconds": 0.0,
+      "http_and_financial_passed": true
+    },
+    {
+      "run_id": "load-35c4cf9756874897b62c558870a368b4",
+      "configuration": {
+        "apis": "http://localhost:8081,http://localhost:8082,http://localhost:8083",
+        "issuer": "http://localhost:8080/realms/jungle",
+        "scenario": "write",
+        "wallets": 8,
+        "history": 100,
+        "concurrency": 16,
+        "duration": 15.0,
+        "warmup": 1.0,
+        "max_requests": 100000,
+        "timeout": 15,
+        "drain_timeout": 300,
+        "output": ".local/load/matrix-20261015/write-w8-h100.json"
+      },
+      "started_at": "2026-10-16T00:30:24.135364+00:00",
+      "ended_at": "2026-10-16T00:30:39.265156+00:00",
+      "measurement_seconds": 15.124130720999347,
+      "requests": 1919,
+      "requests_per_second": 126.88332542217009,
+      "latency_ms": {
+        "p50": 100.04009200019937,
+        "p95": 297.26334099996166,
+        "p99": 456.6963900006158
+      },
+      "http_statuses": {
+        "200": 1919
+      },
+      "outcomes": {
+        "processed": 1919
+      },
+      "errors": {},
+      "error_rate": 0.0,
+      "baseline": [
+        {
+          "wallet_id": "9e80df52-a08a-4e80-bdbe-614175b50668",
+          "minor": 100000070,
+          "version": 131
+        },
+        {
+          "wallet_id": "0ca2ddae-ae0a-4000-90b9-af7c8ceb93b7",
+          "minor": 100000070,
+          "version": 131
+        },
+        {
+          "wallet_id": "24cf835f-e7a0-4e46-9c9c-28b455c491dd",
+          "minor": 100000071,
+          "version": 130
+        },
+        {
+          "wallet_id": "ce4807e7-f485-4415-a49a-613929e75679",
+          "minor": 100000071,
+          "version": 130
+        },
+        {
+          "wallet_id": "7b69e4dc-9b2e-4a64-8218-1a1f9ade9de7",
+          "minor": 100000071,
+          "version": 130
+        },
+        {
+          "wallet_id": "59d9b8b2-d08d-48f5-9f9b-9cf36800a01c",
+          "minor": 100000071,
+          "version": 130
+        },
+        {
+          "wallet_id": "01bec733-da44-4918-9553-de4df36acf6b",
+          "minor": 100000071,
+          "version": 130
+        },
+        {
+          "wallet_id": "750b63a0-e648-472d-8d33-f3b6431ae0f7",
+          "minor": 100000071,
+          "version": 130
+        }
+      ],
+      "verification": [
+        {
+          "wallet_id": "9e80df52-a08a-4e80-bdbe-614175b50668",
+          "consistent": true,
+          "balance": {
+            "amount": "999998.30",
+            "currency": "BRL"
+          },
+          "version": 371,
+          "expected_minor_units": 99999830,
+          "checked_entries": 371
+        },
+        {
+          "wallet_id": "0ca2ddae-ae0a-4000-90b9-af7c8ceb93b7",
+          "consistent": true,
+          "balance": {
+            "amount": "999998.30",
+            "currency": "BRL"
+          },
+          "version": 371,
+          "expected_minor_units": 99999830,
+          "checked_entries": 371
+        },
+        {
+          "wallet_id": "24cf835f-e7a0-4e46-9c9c-28b455c491dd",
+          "consistent": true,
+          "balance": {
+            "amount": "999998.31",
+            "currency": "BRL"
+          },
+          "version": 370,
+          "expected_minor_units": 99999831,
+          "checked_entries": 370
+        },
+        {
+          "wallet_id": "ce4807e7-f485-4415-a49a-613929e75679",
+          "consistent": true,
+          "balance": {
+            "amount": "999998.31",
+            "currency": "BRL"
+          },
+          "version": 370,
+          "expected_minor_units": 99999831,
+          "checked_entries": 370
+        },
+        {
+          "wallet_id": "7b69e4dc-9b2e-4a64-8218-1a1f9ade9de7",
+          "consistent": true,
+          "balance": {
+            "amount": "999998.31",
+            "currency": "BRL"
+          },
+          "version": 370,
+          "expected_minor_units": 99999831,
+          "checked_entries": 370
+        },
+        {
+          "wallet_id": "59d9b8b2-d08d-48f5-9f9b-9cf36800a01c",
+          "consistent": true,
+          "balance": {
+            "amount": "999998.31",
+            "currency": "BRL"
+          },
+          "version": 370,
+          "expected_minor_units": 99999831,
+          "checked_entries": 370
+        },
+        {
+          "wallet_id": "01bec733-da44-4918-9553-de4df36acf6b",
+          "consistent": true,
+          "balance": {
+            "amount": "999998.31",
+            "currency": "BRL"
+          },
+          "version": 370,
+          "expected_minor_units": 99999831,
+          "checked_entries": 370
+        },
+        {
+          "wallet_id": "750b63a0-e648-472d-8d33-f3b6431ae0f7",
+          "consistent": true,
+          "balance": {
+            "amount": "999998.32",
+            "currency": "BRL"
+          },
+          "version": 369,
+          "expected_minor_units": 99999832,
+          "checked_entries": 369
+        }
+      ],
+      "passed": true,
+      "case": "write-w8-h100",
+      "outbox_confirmation_seconds": 84.28567284900055,
+      "outbox_confirmed_empty": true,
+      "client_phase_telemetry": {
+        "outbox_oldest_seconds_max": 13.0,
+        "outbox_pending_max": 3301.0,
+        "unavailable_samples": 0,
+        "counter_deltas": {
+          "http://localhost:8081 jungle_conflicts_total{transport=\"http\"}": 0,
+          "http://localhost:8082 jungle_conflicts_total{transport=\"http\"}": 0,
+          "http://localhost:8083 jungle_conflicts_total{transport=\"http\"}": 0
+        },
+        "counter_resets": []
+      },
+      "prometheus_phase_and_drain": {
+        "jungle_outbox_oldest_seconds_max": 70.0,
+        "jungle_outbox_pending_max": 3301.0
+      },
+      "prometheus_window_end": "2026-10-16T00:32:04.050829+00:00",
+      "prometheus_freshness_filter": "statistics timestamp >= measurement started_at",
+      "outbox_age_observed_max_seconds": 70.0,
+      "http_and_financial_passed": true
+    },
+    {
+      "run_id": "load-9b63f07ff7f14bc6b0738852ec4eb027",
+      "configuration": {
+        "apis": "http://localhost:8081,http://localhost:8082,http://localhost:8083",
+        "issuer": "http://localhost:8080/realms/jungle",
+        "scenario": "write",
+        "wallets": 1,
+        "history": 1000,
+        "concurrency": 16,
+        "duration": 15.0,
+        "warmup": 1.0,
+        "max_requests": 100000,
+        "timeout": 15,
+        "drain_timeout": 300,
+        "output": ".local/load/matrix-20261015/write-w1-h1000.json"
+      },
+      "started_at": "2026-10-16T00:33:09.270773+00:00",
+      "ended_at": "2026-10-16T00:33:25.082838+00:00",
+      "measurement_seconds": 15.807013657000425,
+      "requests": 279,
+      "requests_per_second": 17.650392797404823,
+      "latency_ms": {
+        "p50": 1158.2539410001118,
+        "p95": 1597.673364000002,
+        "p99": 1711.9130769997355
+      },
+      "http_statuses": {
+        "200": 279
+      },
+      "outcomes": {
+        "processed": 279
+      },
+      "errors": {},
+      "error_rate": 0.0,
+      "baseline": [
+        {
+          "wallet_id": "be07db12-81db-41cd-bbab-49b90289973d",
+          "minor": 100000974,
+          "version": 1027
+        }
+      ],
+      "verification": [
+        {
+          "wallet_id": "be07db12-81db-41cd-bbab-49b90289973d",
+          "consistent": true,
+          "balance": {
+            "amount": "1000006.95",
+            "currency": "BRL"
+          },
+          "version": 1306,
+          "expected_minor_units": 100000695,
+          "checked_entries": 1306
+        }
+      ],
+      "passed": true,
+      "case": "write-w1-h1000",
+      "outbox_confirmation_seconds": 14.146756746000392,
+      "outbox_confirmed_empty": true,
+      "client_phase_telemetry": {
+        "outbox_oldest_seconds_max": 0.0,
+        "outbox_pending_max": 5.0,
+        "unavailable_samples": 0,
+        "counter_deltas": {
+          "http://localhost:8081 jungle_conflicts_total{transport=\"http\"}": 0,
+          "http://localhost:8082 jungle_conflicts_total{transport=\"http\"}": 0,
+          "http://localhost:8083 jungle_conflicts_total{transport=\"http\"}": 0
+        },
+        "counter_resets": []
+      },
+      "prometheus_phase_and_drain": {
+        "jungle_outbox_oldest_seconds_max": 0.0,
+        "jungle_outbox_pending_max": 5.0
+      },
+      "prometheus_window_end": "2026-10-16T00:33:39.729595+00:00",
+      "prometheus_freshness_filter": "statistics timestamp >= measurement started_at",
+      "outbox_age_observed_max_seconds": 0.0,
+      "http_and_financial_passed": true
+    },
+    {
+      "run_id": "load-624b3fdd551b4fd4ba786356e7c0f12e",
+      "configuration": {
+        "apis": "http://localhost:8081,http://localhost:8082,http://localhost:8083",
+        "issuer": "http://localhost:8080/realms/jungle",
+        "scenario": "write",
+        "wallets": 8,
+        "history": 1000,
+        "concurrency": 16,
+        "duration": 15.0,
+        "warmup": 0.0,
+        "max_requests": 100000,
+        "timeout": 15,
+        "drain_timeout": 600.0,
+        "output": ".local/load/matrix-20261015/write-w8-h1000-resumed.json",
+        "fixture": ".local/load/matrix-20261015/write-w8-h1000-prepared.fixture.json"
+      },
+      "started_at": "2026-10-16T00:42:39.400641+00:00",
+      "ended_at": "2026-10-16T00:42:54.643987+00:00",
+      "measurement_seconds": 15.236405456000284,
+      "requests": 1423,
+      "requests_per_second": 93.39473172391885,
+      "latency_ms": {
+        "p50": 152.33700799944927,
+        "p95": 317.5582569992912,
+        "p99": 518.8377470003616
+      },
+      "http_statuses": {
+        "200": 1423
+      },
+      "outcomes": {
+        "processed": 1423
+      },
+      "errors": {},
+      "error_rate": 0.0,
+      "baseline": [
+        {
+          "wallet_id": "24db4878-17dd-458c-a43b-1f97ed6479f1",
+          "minor": 100000988,
+          "version": 1013
+        },
+        {
+          "wallet_id": "0f99b0f2-06e0-4e82-a194-66beb4fd0f0e",
+          "minor": 100000988,
+          "version": 1013
+        },
+        {
+          "wallet_id": "4ff1dadb-4d6e-42de-90fa-93736ab41a68",
+          "minor": 100000988,
+          "version": 1013
+        },
+        {
+          "wallet_id": "2122bf31-fc3b-4087-81a4-113e41882187",
+          "minor": 100000988,
+          "version": 1013
+        },
+        {
+          "wallet_id": "464de3a3-55e2-4fb0-a671-ab31f06f747f",
+          "minor": 100000988,
+          "version": 1013
+        },
+        {
+          "wallet_id": "ddfe2517-5468-44fe-acf1-36b5e043b0a2",
+          "minor": 100000988,
+          "version": 1013
+        },
+        {
+          "wallet_id": "796ac761-a1b9-4fd5-aa6a-a3cec3cc5883",
+          "minor": 100000988,
+          "version": 1013
+        },
+        {
+          "wallet_id": "86e1b70a-9367-4d2c-9025-f1d3dc6ed35b",
+          "minor": 100000988,
+          "version": 1013
+        }
+      ],
+      "verification": [
+        {
+          "wallet_id": "24db4878-17dd-458c-a43b-1f97ed6479f1",
+          "consistent": true,
+          "balance": {
+            "amount": "1000008.10",
+            "currency": "BRL"
+          },
+          "version": 1191,
+          "expected_minor_units": 100000810,
+          "checked_entries": 1191
+        },
+        {
+          "wallet_id": "0f99b0f2-06e0-4e82-a194-66beb4fd0f0e",
+          "consistent": true,
+          "balance": {
+            "amount": "1000008.10",
+            "currency": "BRL"
+          },
+          "version": 1191,
+          "expected_minor_units": 100000810,
+          "checked_entries": 1191
+        },
+        {
+          "wallet_id": "4ff1dadb-4d6e-42de-90fa-93736ab41a68",
+          "consistent": true,
+          "balance": {
+            "amount": "1000008.10",
+            "currency": "BRL"
+          },
+          "version": 1191,
+          "expected_minor_units": 100000810,
+          "checked_entries": 1191
+        },
+        {
+          "wallet_id": "2122bf31-fc3b-4087-81a4-113e41882187",
+          "consistent": true,
+          "balance": {
+            "amount": "1000008.10",
+            "currency": "BRL"
+          },
+          "version": 1191,
+          "expected_minor_units": 100000810,
+          "checked_entries": 1191
+        },
+        {
+          "wallet_id": "464de3a3-55e2-4fb0-a671-ab31f06f747f",
+          "consistent": true,
+          "balance": {
+            "amount": "1000008.10",
+            "currency": "BRL"
+          },
+          "version": 1191,
+          "expected_minor_units": 100000810,
+          "checked_entries": 1191
+        },
+        {
+          "wallet_id": "ddfe2517-5468-44fe-acf1-36b5e043b0a2",
+          "consistent": true,
+          "balance": {
+            "amount": "1000008.10",
+            "currency": "BRL"
+          },
+          "version": 1191,
+          "expected_minor_units": 100000810,
+          "checked_entries": 1191
+        },
+        {
+          "wallet_id": "796ac761-a1b9-4fd5-aa6a-a3cec3cc5883",
+          "consistent": true,
+          "balance": {
+            "amount": "1000008.10",
+            "currency": "BRL"
+          },
+          "version": 1191,
+          "expected_minor_units": 100000810,
+          "checked_entries": 1191
+        },
+        {
+          "wallet_id": "86e1b70a-9367-4d2c-9025-f1d3dc6ed35b",
+          "consistent": true,
+          "balance": {
+            "amount": "1000008.11",
+            "currency": "BRL"
+          },
+          "version": 1190,
+          "expected_minor_units": 100000811,
+          "checked_entries": 1190
+        }
+      ],
+      "passed": true,
+      "case": "write-w8-h1000-resumed",
+      "outbox_confirmation_seconds": 45.15802490900023,
+      "outbox_confirmed_empty": true,
+      "client_phase_telemetry": {
+        "outbox_oldest_seconds_max": 10.0,
+        "outbox_pending_max": 1843.0,
+        "unavailable_samples": 0,
+        "counter_deltas": {
+          "http://localhost:8081 jungle_conflicts_total{transport=\"http\"}": 0,
+          "http://localhost:8082 jungle_conflicts_total{transport=\"http\"}": 0,
+          "http://localhost:8083 jungle_conflicts_total{transport=\"http\"}": 0
+        },
+        "counter_resets": []
+      },
+      "prometheus_phase_and_drain": {
+        "jungle_outbox_oldest_seconds_max": 30.0,
+        "jungle_outbox_pending_max": 1843.0
+      },
+      "prometheus_window_end": "2026-10-16T00:43:40.302012+00:00",
+      "prometheus_freshness_filter": "statistics timestamp >= measurement started_at",
+      "outbox_age_observed_max_seconds": 30.0,
+      "http_and_financial_passed": true
+    },
+    {
+      "run_id": "load-da92d9889f474556bb379b0dba09bde3",
+      "configuration": {
+        "apis": "http://localhost:8081,http://localhost:8082,http://localhost:8083",
+        "issuer": "http://localhost:8080/realms/jungle",
+        "scenario": "replay",
+        "wallets": 1,
+        "history": 0,
+        "concurrency": 16,
+        "duration": 15.0,
+        "warmup": 1.0,
+        "max_requests": 100000,
+        "timeout": 15,
+        "drain_timeout": 300,
+        "output": ".local/load/matrix-20261015/replay-w1-h0.json"
+      },
+      "started_at": "2026-10-16T00:40:18.578861+00:00",
+      "ended_at": "2026-10-16T00:40:33.588935+00:00",
+      "measurement_seconds": 15.00409548100015,
+      "requests": 58354,
+      "requests_per_second": 3889.204789045385,
+      "latency_ms": {
+        "p50": 3.667533000225376,
+        "p95": 7.689785999900778,
+        "p99": 10.404415999801131
+      },
+      "http_statuses": {
+        "200": 58354
+      },
+      "outcomes": {
+        "replay": 58354
+      },
+      "errors": {},
+      "error_rate": 0.0,
+      "baseline": [
+        {
+          "wallet_id": "bb313594-d842-449c-b49f-422a38e57e72",
+          "minor": 99999999,
+          "version": 2
+        }
+      ],
+      "verification": [
+        {
+          "wallet_id": "bb313594-d842-449c-b49f-422a38e57e72",
+          "consistent": true,
+          "balance": {
+            "amount": "999999.99",
+            "currency": "BRL"
+          },
+          "version": 2,
+          "expected_minor_units": 99999999,
+          "checked_entries": 2
+        }
+      ],
+      "passed": true,
+      "case": "replay-w1-h0",
+      "outbox_confirmation_seconds": 15.152972904999842,
+      "outbox_confirmed_empty": true,
+      "client_phase_telemetry": {
+        "outbox_oldest_seconds_max": 0.0,
+        "outbox_pending_max": 0.0,
+        "unavailable_samples": 0,
+        "counter_deltas": {
+          "http://localhost:8081 jungle_conflicts_total{transport=\"http\"}": 0,
+          "http://localhost:8082 jungle_conflicts_total{transport=\"http\"}": 0,
+          "http://localhost:8083 jungle_conflicts_total{transport=\"http\"}": 0
+        },
+        "counter_resets": []
+      },
+      "prometheus_phase_and_drain": {
+        "jungle_outbox_oldest_seconds_max": 0.0,
+        "jungle_outbox_pending_max": 0.0
+      },
+      "prometheus_window_end": "2026-10-16T00:40:49.241908+00:00",
+      "prometheus_freshness_filter": "statistics timestamp >= measurement started_at",
+      "outbox_age_observed_max_seconds": 0.0,
+      "http_and_financial_passed": true
+    },
+    {
+      "run_id": "load-f6594d41412c4a0aa4f4c7208065eae5",
+      "configuration": {
+        "apis": "http://localhost:8081,http://localhost:8082,http://localhost:8083",
+        "issuer": "http://localhost:8080/realms/jungle",
+        "scenario": "conflict",
+        "wallets": 1,
+        "history": 0,
+        "concurrency": 16,
+        "duration": 15.0,
+        "warmup": 1.0,
+        "max_requests": 100000,
+        "timeout": 15,
+        "drain_timeout": 300,
+        "output": ".local/load/matrix-20261015/conflict-w1-h0.json"
+      },
+      "started_at": "2026-10-16T00:41:03.988877+00:00",
+      "ended_at": "2026-10-16T00:41:18.999324+00:00",
+      "measurement_seconds": 15.004553181999654,
+      "requests": 55759,
+      "requests_per_second": 3716.1386496261534,
+      "latency_ms": {
+        "p50": 3.9563239997733035,
+        "p95": 7.667578000109643,
+        "p99": 10.10305599993444
+      },
+      "http_statuses": {
+        "409": 55759
+      },
+      "outcomes": {
+        "expected_conflict": 55759
+      },
+      "errors": {},
+      "error_rate": 0.0,
+      "baseline": [
+        {
+          "wallet_id": "9466c930-87bb-4963-9694-09eb09f84de7",
+          "minor": 99999999,
+          "version": 2
+        }
+      ],
+      "verification": [
+        {
+          "wallet_id": "9466c930-87bb-4963-9694-09eb09f84de7",
+          "consistent": true,
+          "balance": {
+            "amount": "999999.99",
+            "currency": "BRL"
+          },
+          "version": 2,
+          "expected_minor_units": 99999999,
+          "checked_entries": 2
+        }
+      ],
+      "passed": true,
+      "case": "conflict-w1-h0",
+      "outbox_confirmation_seconds": 15.04076487400016,
+      "outbox_confirmed_empty": true,
+      "client_phase_telemetry": {
+        "outbox_oldest_seconds_max": 0.0,
+        "outbox_pending_max": 0.0,
+        "unavailable_samples": 0,
+        "counter_deltas": {
+          "http://localhost:8081 jungle_conflicts_total{transport=\"http\"}": 18573.0,
+          "http://localhost:8082 jungle_conflicts_total{transport=\"http\"}": 18589.0,
+          "http://localhost:8083 jungle_conflicts_total{transport=\"http\"}": 18597.0
+        },
+        "counter_resets": []
+      },
+      "prometheus_phase_and_drain": {
+        "jungle_outbox_oldest_seconds_max": 0.0,
+        "jungle_outbox_pending_max": 0.0
+      },
+      "prometheus_window_end": "2026-10-16T00:41:34.540089+00:00",
+      "prometheus_freshness_filter": "statistics timestamp >= measurement started_at",
+      "outbox_age_observed_max_seconds": 0.0,
+      "http_and_financial_passed": true
+    }
+  ],
+  "validation_profiles": [
+    {
+      "case": "replay-smoke",
+      "wallet_id": "9e22d475-644a-4363-9d28-3228745ee9b2",
+      "ledger_entries": 2,
+      "queries": [
+        {
+          "query": "balance_and_version",
+          "execution_ms_median": 0.213,
+          "execution_ms_min": 0.192,
+          "execution_ms_max": 0.217,
+          "last_plan": {
+            "Plan": {
+              "Node Type": "Aggregate",
+              "Strategy": "Plain",
+              "Partial Mode": "Simple",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 28.69,
+              "Total Cost": 28.7,
+              "Plan Rows": 1,
+              "Plan Width": 40,
+              "Actual Startup Time": 0.087,
+              "Actual Total Time": 0.1,
+              "Actual Rows": 1,
+              "Actual Loops": 1,
+              "Shared Hit Blocks": 9,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Nested Loop",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Inner",
+                  "Startup Cost": 0.57,
+                  "Total Cost": 28.66,
+                  "Plan Rows": 2,
+                  "Plan Width": 18,
+                  "Actual Startup Time": 0.05,
+                  "Actual Total Time": 0.081,
+                  "Actual Rows": 2,
+                  "Actual Loops": 1,
+                  "Inner Unique": true,
+                  "Shared Hit Blocks": 9,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Index Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Scan Direction": "Forward",
+                      "Index Name": "wallet_ledger_wallet_id_transaction_id_key",
+                      "Relation Name": "wallet_ledger",
+                      "Alias": "l",
+                      "Startup Cost": 0.29,
+                      "Total Cost": 12.05,
+                      "Plan Rows": 2,
+                      "Plan Width": 30,
+                      "Actual Startup Time": 0.024,
+                      "Actual Total Time": 0.029,
+                      "Actual Rows": 2,
+                      "Actual Loops": 1,
+                      "Index Cond": "(wallet_id = '9e22d475-644a-4363-9d28-3228745ee9b2'::uuid)",
+                      "Rows Removed by Index Recheck": 0,
+                      "Shared Hit Blocks": 3,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    },
+                    {
+                      "Node Type": "Index Scan",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Scan Direction": "Forward",
+                      "Index Name": "wager_transactions_id_wallet_id_currency_key",
+                      "Relation Name": "wager_transactions",
+                      "Alias": "t",
+                      "Startup Cost": 0.29,
+                      "Total Cost": 8.3,
+                      "Plan Rows": 1,
+                      "Plan Width": 20,
+                      "Actual Startup Time": 0.014,
+                      "Actual Total Time": 0.015,
+                      "Actual Rows": 1,
+                      "Actual Loops": 2,
+                      "Index Cond": "(id = l.transaction_id)",
+                      "Rows Removed by Index Recheck": 0,
+                      "Shared Hit Blocks": 6,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 397,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 2.28,
+            "Triggers": [],
+            "Execution Time": 0.193
+          }
+        },
+        {
+          "query": "ledger_transaction_match",
+          "execution_ms_median": 0.108,
+          "execution_ms_min": 0.098,
+          "execution_ms_max": 0.109,
+          "last_plan": {
+            "Plan": {
+              "Node Type": "Result",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 28.71,
+              "Total Cost": 28.72,
+              "Plan Rows": 1,
+              "Plan Width": 1,
+              "Actual Startup Time": 0.053,
+              "Actual Total Time": 0.064,
+              "Actual Rows": 1,
+              "Actual Loops": 1,
+              "Shared Hit Blocks": 9,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Nested Loop",
+                  "Parent Relationship": "InitPlan",
+                  "Subplan Name": "InitPlan 1",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Inner",
+                  "Startup Cost": 0.57,
+                  "Total Cost": 28.71,
+                  "Plan Rows": 1,
+                  "Plan Width": 0,
+                  "Actual Startup Time": 0.048,
+                  "Actual Total Time": 0.055,
+                  "Actual Rows": 0,
+                  "Actual Loops": 1,
+                  "Inner Unique": true,
+                  "Shared Hit Blocks": 9,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Index Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Scan Direction": "Forward",
+                      "Index Name": "wallet_ledger_wallet_id_transaction_id_key",
+                      "Relation Name": "wallet_ledger",
+                      "Alias": "l",
+                      "Startup Cost": 0.29,
+                      "Total Cost": 12.05,
+                      "Plan Rows": 2,
+                      "Plan Width": 30,
+                      "Actual Startup Time": 0.012,
+                      "Actual Total Time": 0.016,
+                      "Actual Rows": 2,
+                      "Actual Loops": 1,
+                      "Index Cond": "(wallet_id = '9e22d475-644a-4363-9d28-3228745ee9b2'::uuid)",
+                      "Rows Removed by Index Recheck": 0,
+                      "Shared Hit Blocks": 3,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    },
+                    {
+                      "Node Type": "Index Scan",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Scan Direction": "Forward",
+                      "Index Name": "wager_transactions_id_wallet_id_currency_key",
+                      "Relation Name": "wager_transactions",
+                      "Alias": "t",
+                      "Startup Cost": 0.29,
+                      "Total Cost": 8.32,
+                      "Plan Rows": 1,
+                      "Plan Width": 37,
+                      "Actual Startup Time": 0.011,
+                      "Actual Total Time": 0.012,
+                      "Actual Rows": 0,
+                      "Actual Loops": 2,
+                      "Index Cond": "(id = l.transaction_id)",
+                      "Rows Removed by Index Recheck": 0,
+                      "Filter": "((status <> 'PROCESSED'::text) OR (kind = 'LOSS'::text) OR (amount <> l.amount) OR ((l.direction = 'CREDIT'::text) AND (kind = 'BET'::text)) OR ((l.direction = 'DEBIT'::text) AND (kind = ANY ('{OPENING,WIN,REFUND}'::text[]))))",
+                      "Rows Removed by Filter": 1,
+                      "Shared Hit Blocks": 6,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 70,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.675,
+            "Triggers": [],
+            "Execution Time": 0.104
+          }
+        },
+        {
+          "query": "processed_transaction_has_ledger",
+          "execution_ms_median": 57.176,
+          "execution_ms_min": 56.624,
+          "execution_ms_max": 57.755,
+          "last_plan": {
+            "Plan": {
+              "Node Type": "Result",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 1347.08,
+              "Total Cost": 1347.09,
+              "Plan Rows": 1,
+              "Plan Width": 1,
+              "Actual Startup Time": 57.029,
+              "Actual Total Time": 57.046,
+              "Actual Rows": 1,
+              "Actual Loops": 1,
+              "Shared Hit Blocks": 451,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Hash Join",
+                  "Parent Relationship": "InitPlan",
+                  "Subplan Name": "InitPlan 1",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Right",
+                  "Startup Cost": 875.01,
+                  "Total Cost": 1347.08,
+                  "Plan Rows": 1,
+                  "Plan Width": 0,
+                  "Actual Startup Time": 57.024,
+                  "Actual Total Time": 57.037,
+                  "Actual Rows": 0,
+                  "Actual Loops": 1,
+                  "Inner Unique": true,
+                  "Hash Cond": "(l.transaction_id = t.id)",
+                  "Filter": "(l.id IS NULL)",
+                  "Rows Removed by Filter": 2,
+                  "Shared Hit Blocks": 451,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "wallet_ledger",
+                      "Alias": "l",
+                      "Startup Cost": 0.0,
+                      "Total Cost": 428.8,
+                      "Plan Rows": 16480,
+                      "Plan Width": 32,
+                      "Actual Startup Time": 0.006,
+                      "Actual Total Time": 27.544,
+                      "Actual Rows": 16712,
+                      "Actual Loops": 1,
+                      "Shared Hit Blocks": 264,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    },
+                    {
+                      "Node Type": "Hash",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 874.98,
+                      "Total Cost": 874.98,
+                      "Plan Rows": 2,
+                      "Plan Width": 16,
+                      "Actual Startup Time": 1.305,
+                      "Actual Total Time": 1.311,
+                      "Actual Rows": 2,
+                      "Actual Loops": 1,
+                      "Hash Buckets": 1024,
+                      "Original Hash Buckets": 1024,
+                      "Hash Batches": 1,
+                      "Original Hash Batches": 1,
+                      "Peak Memory Usage": 9,
+                      "Shared Hit Blocks": 187,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "Index Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Scan Direction": "Forward",
+                          "Index Name": "wager_transactions_id_wallet_id_currency_key",
+                          "Relation Name": "wager_transactions",
+                          "Alias": "t",
+                          "Startup Cost": 0.29,
+                          "Total Cost": 874.98,
+                          "Plan Rows": 2,
+                          "Plan Width": 16,
+                          "Actual Startup Time": 0.947,
+                          "Actual Total Time": 1.293,
+                          "Actual Rows": 2,
+                          "Actual Loops": 1,
+                          "Index Cond": "(wallet_id = '9e22d475-644a-4363-9d28-3228745ee9b2'::uuid)",
+                          "Rows Removed by Index Recheck": 0,
+                          "Filter": "((kind <> 'LOSS'::text) AND (status = 'PROCESSED'::text))",
+                          "Rows Removed by Filter": 0,
+                          "Shared Hit Blocks": 187,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 14,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.257,
+            "Triggers": [],
+            "Execution Time": 57.091
+          }
+        }
+      ]
+    },
+    {
+      "case": "write-w1-h0",
+      "wallet_id": "dec83764-99b3-4e1b-9d06-2609bff36ddc",
+      "ledger_entries": 536,
+      "queries": [
+        {
+          "query": "balance_and_version",
+          "execution_ms_median": 63.139,
+          "execution_ms_min": 62.464,
+          "execution_ms_max": 66.81,
+          "last_plan": {
+            "Plan": {
+              "Node Type": "Aggregate",
+              "Strategy": "Plain",
+              "Partial Mode": "Simple",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 2305.66,
+              "Total Cost": 2305.67,
+              "Plan Rows": 1,
+              "Plan Width": 40,
+              "Actual Startup Time": 62.441,
+              "Actual Total Time": 62.463,
+              "Actual Rows": 1,
+              "Actual Loops": 1,
+              "Shared Hit Blocks": 1817,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Hash Join",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Inner",
+                  "Startup Cost": 301.84,
+                  "Total Cost": 2296.35,
+                  "Plan Rows": 532,
+                  "Plan Width": 18,
+                  "Actual Startup Time": 2.134,
+                  "Actual Total Time": 61.49,
+                  "Actual Rows": 536,
+                  "Actual Loops": 1,
+                  "Inner Unique": true,
+                  "Hash Cond": "(t.id = l.transaction_id)",
+                  "Shared Hit Blocks": 1817,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "wager_transactions",
+                      "Alias": "t",
+                      "Startup Cost": 0.0,
+                      "Total Cost": 1951.56,
+                      "Plan Rows": 16356,
+                      "Plan Width": 20,
+                      "Actual Startup Time": 0.005,
+                      "Actual Total Time": 29.819,
+                      "Actual Rows": 16713,
+                      "Actual Loops": 1,
+                      "Shared Hit Blocks": 1788,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    },
+                    {
+                      "Node Type": "Hash",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 295.14,
+                      "Total Cost": 295.14,
+                      "Plan Rows": 536,
+                      "Plan Width": 30,
+                      "Actual Startup Time": 2.001,
+                      "Actual Total Time": 2.01,
+                      "Actual Rows": 536,
+                      "Actual Loops": 1,
+                      "Hash Buckets": 1024,
+                      "Original Hash Buckets": 1024,
+                      "Hash Batches": 1,
+                      "Original Hash Batches": 1,
+                      "Peak Memory Usage": 42,
+                      "Shared Hit Blocks": 29,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "Bitmap Heap Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Relation Name": "wallet_ledger",
+                          "Alias": "l",
+                          "Startup Cost": 24.44,
+                          "Total Cost": 295.14,
+                          "Plan Rows": 536,
+                          "Plan Width": 30,
+                          "Actual Startup Time": 0.08,
+                          "Actual Total Time": 1.039,
+                          "Actual Rows": 536,
+                          "Actual Loops": 1,
+                          "Recheck Cond": "(wallet_id = 'dec83764-99b3-4e1b-9d06-2609bff36ddc'::uuid)",
+                          "Rows Removed by Index Recheck": 0,
+                          "Exact Heap Blocks": 23,
+                          "Lossy Heap Blocks": 0,
+                          "Shared Hit Blocks": 29,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Bitmap Index Scan",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Index Name": "wallet_ledger_wallet_id_transaction_id_key",
+                              "Startup Cost": 0.0,
+                              "Total Cost": 24.31,
+                              "Plan Rows": 536,
+                              "Plan Width": 0,
+                              "Actual Startup Time": 0.06,
+                              "Actual Total Time": 0.061,
+                              "Actual Rows": 536,
+                              "Actual Loops": 1,
+                              "Index Cond": "(wallet_id = 'dec83764-99b3-4e1b-9d06-2609bff36ddc'::uuid)",
+                              "Shared Hit Blocks": 6,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 412,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 2.377,
+            "Triggers": [],
+            "Execution Time": 62.596
+          }
+        },
+        {
+          "query": "ledger_transaction_match",
+          "execution_ms_median": 5.997,
+          "execution_ms_min": 5.869,
+          "execution_ms_max": 6.237,
+          "last_plan": {
+            "Plan": {
+              "Node Type": "Result",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 12.79,
+              "Total Cost": 12.8,
+              "Plan Rows": 1,
+              "Plan Width": 1,
+              "Actual Startup Time": 5.867,
+              "Actual Total Time": 5.879,
+              "Actual Rows": 1,
+              "Actual Loops": 1,
+              "Shared Hit Blocks": 1872,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Nested Loop",
+                  "Parent Relationship": "InitPlan",
+                  "Subplan Name": "InitPlan 1",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Inner",
+                  "Startup Cost": 0.29,
+                  "Total Cost": 2839.55,
+                  "Plan Rows": 227,
+                  "Plan Width": 0,
+                  "Actual Startup Time": 5.862,
+                  "Actual Total Time": 5.87,
+                  "Actual Rows": 0,
+                  "Actual Loops": 1,
+                  "Inner Unique": true,
+                  "Shared Hit Blocks": 1872,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "wallet_ledger",
+                      "Alias": "l",
+                      "Startup Cost": 0.0,
+                      "Total Cost": 470.0,
+                      "Plan Rows": 536,
+                      "Plan Width": 30,
+                      "Actual Startup Time": 0.022,
+                      "Actual Total Time": 1.749,
+                      "Actual Rows": 536,
+                      "Actual Loops": 1,
+                      "Filter": "(wallet_id = 'dec83764-99b3-4e1b-9d06-2609bff36ddc'::uuid)",
+                      "Rows Removed by Filter": 16176,
+                      "Shared Hit Blocks": 264,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    },
+                    {
+                      "Node Type": "Index Scan",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Scan Direction": "Forward",
+                      "Index Name": "wager_transactions_pkey",
+                      "Relation Name": "wager_transactions",
+                      "Alias": "t",
+                      "Startup Cost": 0.29,
+                      "Total Cost": 4.41,
+                      "Plan Rows": 1,
+                      "Plan Width": 37,
+                      "Actual Startup Time": 0.004,
+                      "Actual Total Time": 0.004,
+                      "Actual Rows": 0,
+                      "Actual Loops": 536,
+                      "Index Cond": "(id = l.transaction_id)",
+                      "Rows Removed by Index Recheck": 0,
+                      "Filter": "((status <> 'PROCESSED'::text) OR (kind = 'LOSS'::text) OR (amount <> l.amount) OR ((l.direction = 'CREDIT'::text) AND (kind = 'BET'::text)) OR ((l.direction = 'DEBIT'::text) AND (kind = ANY ('{OPENING,WIN,REFUND}'::text[]))))",
+                      "Rows Removed by Filter": 1,
+                      "Shared Hit Blocks": 1608,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 70,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.83,
+            "Triggers": [],
+            "Execution Time": 5.914
+          }
+        },
+        {
+          "query": "processed_transaction_has_ledger",
+          "execution_ms_median": 59.934,
+          "execution_ms_min": 58.705,
+          "execution_ms_max": 63.097,
+          "last_plan": {
+            "Plan": {
+              "Node Type": "Result",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 2507.24,
+              "Total Cost": 2507.25,
+              "Plan Rows": 1,
+              "Plan Width": 1,
+              "Actual Startup Time": 58.614,
+              "Actual Total Time": 58.637,
+              "Actual Rows": 1,
+              "Actual Loops": 1,
+              "Shared Hit Blocks": 551,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Hash Join",
+                  "Parent Relationship": "InitPlan",
+                  "Subplan Name": "InitPlan 1",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Right",
+                  "Startup Cost": 2035.17,
+                  "Total Cost": 2507.24,
+                  "Plan Rows": 1,
+                  "Plan Width": 0,
+                  "Actual Startup Time": 58.609,
+                  "Actual Total Time": 58.626,
+                  "Actual Rows": 0,
+                  "Actual Loops": 1,
+                  "Inner Unique": true,
+                  "Hash Cond": "(l.transaction_id = t.id)",
+                  "Filter": "(l.id IS NULL)",
+                  "Rows Removed by Filter": 536,
+                  "Shared Hit Blocks": 551,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "wallet_ledger",
+                      "Alias": "l",
+                      "Startup Cost": 0.0,
+                      "Total Cost": 428.8,
+                      "Plan Rows": 16480,
+                      "Plan Width": 32,
+                      "Actual Startup Time": 0.005,
+                      "Actual Total Time": 27.496,
+                      "Actual Rows": 16712,
+                      "Actual Loops": 1,
+                      "Shared Hit Blocks": 264,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    },
+                    {
+                      "Node Type": "Hash",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 2028.47,
+                      "Total Cost": 2028.47,
+                      "Plan Rows": 536,
+                      "Plan Width": 16,
+                      "Actual Startup Time": 2.561,
+                      "Actual Total Time": 2.57,
+                      "Actual Rows": 536,
+                      "Actual Loops": 1,
+                      "Hash Buckets": 1024,
+                      "Original Hash Buckets": 1024,
+                      "Hash Batches": 1,
+                      "Original Hash Batches": 1,
+                      "Peak Memory Usage": 34,
+                      "Shared Hit Blocks": 287,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "Bitmap Heap Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Relation Name": "wager_transactions",
+                          "Alias": "t",
+                          "Startup Cost": 867.09,
+                          "Total Cost": 2028.47,
+                          "Plan Rows": 536,
+                          "Plan Width": 16,
+                          "Actual Startup Time": 0.509,
+                          "Actual Total Time": 1.649,
+                          "Actual Rows": 536,
+                          "Actual Loops": 1,
+                          "Recheck Cond": "(wallet_id = 'dec83764-99b3-4e1b-9d06-2609bff36ddc'::uuid)",
+                          "Rows Removed by Index Recheck": 0,
+                          "Filter": "((kind <> 'LOSS'::text) AND (status = 'PROCESSED'::text))",
+                          "Rows Removed by Filter": 0,
+                          "Exact Heap Blocks": 102,
+                          "Lossy Heap Blocks": 0,
+                          "Shared Hit Blocks": 287,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Bitmap Index Scan",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Index Name": "wager_transactions_id_wallet_id_currency_key",
+                              "Startup Cost": 0.0,
+                              "Total Cost": 866.95,
+                              "Plan Rows": 536,
+                              "Plan Width": 0,
+                              "Actual Startup Time": 0.489,
+                              "Actual Total Time": 0.491,
+                              "Actual Rows": 536,
+                              "Actual Loops": 1,
+                              "Index Cond": "(wallet_id = 'dec83764-99b3-4e1b-9d06-2609bff36ddc'::uuid)",
+                              "Shared Hit Blocks": 185,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 14,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.304,
+            "Triggers": [],
+            "Execution Time": 58.705
+          }
+        }
+      ]
+    },
+    {
+      "case": "write-w1-h100",
+      "wallet_id": "b7807e33-3040-4797-8804-91a0db00203b",
+      "ledger_entries": 575,
+      "queries": [
+        {
+          "query": "balance_and_version",
+          "execution_ms_median": 64.374,
+          "execution_ms_min": 63.836,
+          "execution_ms_max": 68.077,
+          "last_plan": {
+            "Plan": {
+              "Node Type": "Aggregate",
+              "Strategy": "Plain",
+              "Partial Mode": "Simple",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 2307.62,
+              "Total Cost": 2307.63,
+              "Plan Rows": 1,
+              "Plan Width": 40,
+              "Actual Startup Time": 64.361,
+              "Actual Total Time": 64.383,
+              "Actual Rows": 1,
+              "Actual Loops": 1,
+              "Shared Hit Blocks": 1826,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Hash Join",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Inner",
+                  "Startup Cost": 303.12,
+                  "Total Cost": 2297.62,
+                  "Plan Rows": 571,
+                  "Plan Width": 18,
+                  "Actual Startup Time": 2.348,
+                  "Actual Total Time": 63.265,
+                  "Actual Rows": 575,
+                  "Actual Loops": 1,
+                  "Inner Unique": true,
+                  "Hash Cond": "(t.id = l.transaction_id)",
+                  "Shared Hit Blocks": 1826,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "wager_transactions",
+                      "Alias": "t",
+                      "Startup Cost": 0.0,
+                      "Total Cost": 1951.56,
+                      "Plan Rows": 16356,
+                      "Plan Width": 20,
+                      "Actual Startup Time": 0.006,
+                      "Actual Total Time": 30.418,
+                      "Actual Rows": 16713,
+                      "Actual Loops": 1,
+                      "Shared Hit Blocks": 1788,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    },
+                    {
+                      "Node Type": "Hash",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 295.93,
+                      "Total Cost": 295.93,
+                      "Plan Rows": 575,
+                      "Plan Width": 30,
+                      "Actual Startup Time": 2.281,
+                      "Actual Total Time": 2.291,
+                      "Actual Rows": 575,
+                      "Actual Loops": 1,
+                      "Hash Buckets": 1024,
+                      "Original Hash Buckets": 1024,
+                      "Hash Batches": 1,
+                      "Original Hash Batches": 1,
+                      "Peak Memory Usage": 44,
+                      "Shared Hit Blocks": 38,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "Bitmap Heap Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Relation Name": "wallet_ledger",
+                          "Alias": "l",
+                          "Startup Cost": 24.74,
+                          "Total Cost": 295.93,
+                          "Plan Rows": 575,
+                          "Plan Width": 30,
+                          "Actual Startup Time": 0.085,
+                          "Actual Total Time": 1.214,
+                          "Actual Rows": 575,
+                          "Actual Loops": 1,
+                          "Recheck Cond": "(wallet_id = 'b7807e33-3040-4797-8804-91a0db00203b'::uuid)",
+                          "Rows Removed by Index Recheck": 0,
+                          "Exact Heap Blocks": 32,
+                          "Lossy Heap Blocks": 0,
+                          "Shared Hit Blocks": 38,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Bitmap Index Scan",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Index Name": "wallet_ledger_wallet_id_transaction_id_key",
+                              "Startup Cost": 0.0,
+                              "Total Cost": 24.6,
+                              "Plan Rows": 575,
+                              "Plan Width": 0,
+                              "Actual Startup Time": 0.063,
+                              "Actual Total Time": 0.065,
+                              "Actual Rows": 575,
+                              "Actual Loops": 1,
+                              "Index Cond": "(wallet_id = 'b7807e33-3040-4797-8804-91a0db00203b'::uuid)",
+                              "Shared Hit Blocks": 6,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 412,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 2.523,
+            "Triggers": [],
+            "Execution Time": 64.514
+          }
+        },
+        {
+          "query": "ledger_transaction_match",
+          "execution_ms_median": 6.243,
+          "execution_ms_min": 5.992,
+          "execution_ms_max": 9.255,
+          "last_plan": {
+            "Plan": {
+              "Node Type": "Result",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 12.45,
+              "Total Cost": 12.46,
+              "Plan Rows": 1,
+              "Plan Width": 1,
+              "Actual Startup Time": 5.949,
+              "Actual Total Time": 5.962,
+              "Actual Rows": 1,
+              "Actual Loops": 1,
+              "Shared Hit Blocks": 1989,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Nested Loop",
+                  "Parent Relationship": "InitPlan",
+                  "Subplan Name": "InitPlan 1",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Inner",
+                  "Startup Cost": 0.29,
+                  "Total Cost": 2968.47,
+                  "Plan Rows": 244,
+                  "Plan Width": 0,
+                  "Actual Startup Time": 5.944,
+                  "Actual Total Time": 5.953,
+                  "Actual Rows": 0,
+                  "Actual Loops": 1,
+                  "Inner Unique": true,
+                  "Shared Hit Blocks": 1989,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "wallet_ledger",
+                      "Alias": "l",
+                      "Startup Cost": 0.0,
+                      "Total Cost": 470.0,
+                      "Plan Rows": 575,
+                      "Plan Width": 30,
+                      "Actual Startup Time": 0.162,
+                      "Actual Total Time": 1.819,
+                      "Actual Rows": 575,
+                      "Actual Loops": 1,
+                      "Filter": "(wallet_id = 'b7807e33-3040-4797-8804-91a0db00203b'::uuid)",
+                      "Rows Removed by Filter": 16137,
+                      "Shared Hit Blocks": 264,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    },
+                    {
+                      "Node Type": "Index Scan",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Scan Direction": "Forward",
+                      "Index Name": "wager_transactions_pkey",
+                      "Relation Name": "wager_transactions",
+                      "Alias": "t",
+                      "Startup Cost": 0.29,
+                      "Total Cost": 4.34,
+                      "Plan Rows": 1,
+                      "Plan Width": 37,
+                      "Actual Startup Time": 0.004,
+                      "Actual Total Time": 0.004,
+                      "Actual Rows": 0,
+                      "Actual Loops": 575,
+                      "Index Cond": "(id = l.transaction_id)",
+                      "Rows Removed by Index Recheck": 0,
+                      "Filter": "((status <> 'PROCESSED'::text) OR (kind = 'LOSS'::text) OR (amount <> l.amount) OR ((l.direction = 'CREDIT'::text) AND (kind = 'BET'::text)) OR ((l.direction = 'DEBIT'::text) AND (kind = ANY ('{OPENING,WIN,REFUND}'::text[]))))",
+                      "Rows Removed by Filter": 1,
+                      "Shared Hit Blocks": 1725,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 70,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.949,
+            "Triggers": [],
+            "Execution Time": 5.992
+          }
+        },
+        {
+          "query": "processed_transaction_has_ledger",
+          "execution_ms_median": 65.324,
+          "execution_ms_min": 65.038,
+          "execution_ms_max": 65.983,
+          "last_plan": {
+            "Plan": {
+              "Node Type": "Result",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 2553.49,
+              "Total Cost": 2553.5,
+              "Plan Rows": 1,
+              "Plan Width": 1,
+              "Actual Startup Time": 65.933,
+              "Actual Total Time": 65.95,
+              "Actual Rows": 1,
+              "Actual Loops": 1,
+              "Shared Hit Blocks": 2052,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Hash Join",
+                  "Parent Relationship": "InitPlan",
+                  "Subplan Name": "InitPlan 1",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Right",
+                  "Startup Cost": 2081.42,
+                  "Total Cost": 2553.49,
+                  "Plan Rows": 1,
+                  "Plan Width": 0,
+                  "Actual Startup Time": 65.93,
+                  "Actual Total Time": 65.941,
+                  "Actual Rows": 0,
+                  "Actual Loops": 1,
+                  "Inner Unique": true,
+                  "Hash Cond": "(l.transaction_id = t.id)",
+                  "Filter": "(l.id IS NULL)",
+                  "Rows Removed by Filter": 575,
+                  "Shared Hit Blocks": 2052,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "wallet_ledger",
+                      "Alias": "l",
+                      "Startup Cost": 0.0,
+                      "Total Cost": 428.8,
+                      "Plan Rows": 16480,
+                      "Plan Width": 32,
+                      "Actual Startup Time": 0.007,
+                      "Actual Total Time": 28.482,
+                      "Actual Rows": 16712,
+                      "Actual Loops": 1,
+                      "Shared Hit Blocks": 264,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    },
+                    {
+                      "Node Type": "Hash",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 2074.23,
+                      "Total Cost": 2074.23,
+                      "Plan Rows": 575,
+                      "Plan Width": 16,
+                      "Actual Startup Time": 8.082,
+                      "Actual Total Time": 8.088,
+                      "Actual Rows": 575,
+                      "Actual Loops": 1,
+                      "Hash Buckets": 1024,
+                      "Original Hash Buckets": 1024,
+                      "Hash Batches": 1,
+                      "Original Hash Batches": 1,
+                      "Peak Memory Usage": 35,
+                      "Shared Hit Blocks": 1788,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "Seq Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Relation Name": "wager_transactions",
+                          "Alias": "t",
+                          "Startup Cost": 0.0,
+                          "Total Cost": 2074.23,
+                          "Plan Rows": 575,
+                          "Plan Width": 16,
+                          "Actual Startup Time": 0.011,
+                          "Actual Total Time": 7.021,
+                          "Actual Rows": 575,
+                          "Actual Loops": 1,
+                          "Filter": "((kind <> 'LOSS'::text) AND (wallet_id = 'b7807e33-3040-4797-8804-91a0db00203b'::uuid) AND (status = 'PROCESSED'::text))",
+                          "Rows Removed by Filter": 16138,
+                          "Shared Hit Blocks": 1788,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 14,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.294,
+            "Triggers": [],
+            "Execution Time": 65.983
+          }
+        }
+      ]
+    },
+    {
+      "case": "write-w1-h1000",
+      "wallet_id": "be07db12-81db-41cd-bbab-49b90289973d",
+      "ledger_entries": 1306,
+      "queries": [
+        {
+          "query": "balance_and_version",
+          "execution_ms_median": 69.893,
+          "execution_ms_min": 69.206,
+          "execution_ms_max": 70.378,
+          "last_plan": {
+            "Plan": {
+              "Node Type": "Aggregate",
+              "Strategy": "Plain",
+              "Partial Mode": "Simple",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 2368.25,
+              "Total Cost": 2368.26,
+              "Plan Rows": 1,
+              "Plan Width": 40,
+              "Actual Startup Time": 70.027,
+              "Actual Total Time": 70.048,
+              "Actual Rows": 1,
+              "Actual Loops": 1,
+              "Shared Hit Blocks": 1856,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Hash Join",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Inner",
+                  "Startup Cost": 351.06,
+                  "Total Cost": 2345.56,
+                  "Plan Rows": 1296,
+                  "Plan Width": 18,
+                  "Actual Startup Time": 4.87,
+                  "Actual Total Time": 67.643,
+                  "Actual Rows": 1306,
+                  "Actual Loops": 1,
+                  "Inner Unique": true,
+                  "Hash Cond": "(t.id = l.transaction_id)",
+                  "Shared Hit Blocks": 1856,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "wager_transactions",
+                      "Alias": "t",
+                      "Startup Cost": 0.0,
+                      "Total Cost": 1951.56,
+                      "Plan Rows": 16356,
+                      "Plan Width": 20,
+                      "Actual Startup Time": 0.005,
+                      "Actual Total Time": 30.568,
+                      "Actual Rows": 16713,
+                      "Actual Loops": 1,
+                      "Shared Hit Blocks": 1788,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    },
+                    {
+                      "Node Type": "Hash",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 334.73,
+                      "Total Cost": 334.73,
+                      "Plan Rows": 1306,
+                      "Plan Width": 30,
+                      "Actual Startup Time": 4.801,
+                      "Actual Total Time": 4.811,
+                      "Actual Rows": 1306,
+                      "Actual Loops": 1,
+                      "Hash Buckets": 2048,
+                      "Original Hash Buckets": 2048,
+                      "Hash Batches": 1,
+                      "Original Hash Batches": 1,
+                      "Peak Memory Usage": 98,
+                      "Shared Hit Blocks": 68,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "Bitmap Heap Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Relation Name": "wallet_ledger",
+                          "Alias": "l",
+                          "Startup Cost": 54.41,
+                          "Total Cost": 334.73,
+                          "Plan Rows": 1306,
+                          "Plan Width": 30,
+                          "Actual Startup Time": 0.127,
+                          "Actual Total Time": 2.508,
+                          "Actual Rows": 1306,
+                          "Actual Loops": 1,
+                          "Recheck Cond": "(wallet_id = 'be07db12-81db-41cd-bbab-49b90289973d'::uuid)",
+                          "Rows Removed by Index Recheck": 0,
+                          "Exact Heap Blocks": 56,
+                          "Lossy Heap Blocks": 0,
+                          "Shared Hit Blocks": 68,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Bitmap Index Scan",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Index Name": "wallet_ledger_wallet_id_transaction_id_key",
+                              "Startup Cost": 0.0,
+                              "Total Cost": 54.08,
+                              "Plan Rows": 1306,
+                              "Plan Width": 0,
+                              "Actual Startup Time": 0.102,
+                              "Actual Total Time": 0.104,
+                              "Actual Rows": 1306,
+                              "Actual Loops": 1,
+                              "Index Cond": "(wallet_id = 'be07db12-81db-41cd-bbab-49b90289973d'::uuid)",
+                              "Shared Hit Blocks": 12,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 412,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 2.635,
+            "Triggers": [],
+            "Execution Time": 70.185
+          }
+        },
+        {
+          "query": "ledger_transaction_match",
+          "execution_ms_median": 13.253,
+          "execution_ms_min": 12.451,
+          "execution_ms_max": 14.987,
+          "last_plan": {
+            "Plan": {
+              "Node Type": "Result",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 9.42,
+              "Total Cost": 9.43,
+              "Plan Rows": 1,
+              "Plan Width": 1,
+              "Actual Startup Time": 13.032,
+              "Actual Total Time": 13.046,
+              "Actual Rows": 1,
+              "Actual Loops": 1,
+              "Shared Hit Blocks": 4182,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Nested Loop",
+                  "Parent Relationship": "InitPlan",
+                  "Subplan Name": "InitPlan 1",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Inner",
+                  "Startup Cost": 0.29,
+                  "Total Cost": 5054.61,
+                  "Plan Rows": 553,
+                  "Plan Width": 0,
+                  "Actual Startup Time": 13.028,
+                  "Actual Total Time": 13.036,
+                  "Actual Rows": 0,
+                  "Actual Loops": 1,
+                  "Inner Unique": true,
+                  "Shared Hit Blocks": 4182,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "wallet_ledger",
+                      "Alias": "l",
+                      "Startup Cost": 0.0,
+                      "Total Cost": 470.0,
+                      "Plan Rows": 1306,
+                      "Plan Width": 30,
+                      "Actual Startup Time": 0.254,
+                      "Actual Total Time": 3.169,
+                      "Actual Rows": 1306,
+                      "Actual Loops": 1,
+                      "Filter": "(wallet_id = 'be07db12-81db-41cd-bbab-49b90289973d'::uuid)",
+                      "Rows Removed by Filter": 15406,
+                      "Shared Hit Blocks": 264,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    },
+                    {
+                      "Node Type": "Index Scan",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Scan Direction": "Forward",
+                      "Index Name": "wager_transactions_pkey",
+                      "Relation Name": "wager_transactions",
+                      "Alias": "t",
+                      "Startup Cost": 0.29,
+                      "Total Cost": 3.5,
+                      "Plan Rows": 1,
+                      "Plan Width": 37,
+                      "Actual Startup Time": 0.004,
+                      "Actual Total Time": 0.004,
+                      "Actual Rows": 0,
+                      "Actual Loops": 1306,
+                      "Index Cond": "(id = l.transaction_id)",
+                      "Rows Removed by Index Recheck": 0,
+                      "Filter": "((status <> 'PROCESSED'::text) OR (kind = 'LOSS'::text) OR (amount <> l.amount) OR ((l.direction = 'CREDIT'::text) AND (kind = 'BET'::text)) OR ((l.direction = 'DEBIT'::text) AND (kind = ANY ('{OPENING,WIN,REFUND}'::text[]))))",
+                      "Rows Removed by Filter": 1,
+                      "Shared Hit Blocks": 3918,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 70,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.75,
+            "Triggers": [],
+            "Execution Time": 13.086
+          }
+        },
+        {
+          "query": "processed_transaction_has_ledger",
+          "execution_ms_median": 68.519,
+          "execution_ms_min": 67.564,
+          "execution_ms_max": 73.015,
+          "last_plan": {
+            "Plan": {
+              "Node Type": "Result",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 2562.63,
+              "Total Cost": 2562.64,
+              "Plan Rows": 1,
+              "Plan Width": 1,
+              "Actual Startup Time": 67.498,
+              "Actual Total Time": 67.518,
+              "Actual Rows": 1,
+              "Actual Loops": 1,
+              "Shared Hit Blocks": 2052,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Hash Join",
+                  "Parent Relationship": "InitPlan",
+                  "Subplan Name": "InitPlan 1",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Right",
+                  "Startup Cost": 2090.55,
+                  "Total Cost": 2562.63,
+                  "Plan Rows": 1,
+                  "Plan Width": 0,
+                  "Actual Startup Time": 67.493,
+                  "Actual Total Time": 67.507,
+                  "Actual Rows": 0,
+                  "Actual Loops": 1,
+                  "Inner Unique": true,
+                  "Hash Cond": "(l.transaction_id = t.id)",
+                  "Filter": "(l.id IS NULL)",
+                  "Rows Removed by Filter": 1306,
+                  "Shared Hit Blocks": 2052,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "wallet_ledger",
+                      "Alias": "l",
+                      "Startup Cost": 0.0,
+                      "Total Cost": 428.8,
+                      "Plan Rows": 16480,
+                      "Plan Width": 32,
+                      "Actual Startup Time": 0.008,
+                      "Actual Total Time": 28.242,
+                      "Actual Rows": 16712,
+                      "Actual Loops": 1,
+                      "Shared Hit Blocks": 264,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    },
+                    {
+                      "Node Type": "Hash",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 2074.23,
+                      "Total Cost": 2074.23,
+                      "Plan Rows": 1306,
+                      "Plan Width": 16,
+                      "Actual Startup Time": 9.835,
+                      "Actual Total Time": 9.843,
+                      "Actual Rows": 1306,
+                      "Actual Loops": 1,
+                      "Hash Buckets": 2048,
+                      "Original Hash Buckets": 2048,
+                      "Hash Batches": 1,
+                      "Original Hash Batches": 1,
+                      "Peak Memory Usage": 78,
+                      "Shared Hit Blocks": 1788,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "Seq Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Relation Name": "wager_transactions",
+                          "Alias": "t",
+                          "Startup Cost": 0.0,
+                          "Total Cost": 2074.23,
+                          "Plan Rows": 1306,
+                          "Plan Width": 16,
+                          "Actual Startup Time": 0.01,
+                          "Actual Total Time": 7.597,
+                          "Actual Rows": 1306,
+                          "Actual Loops": 1,
+                          "Filter": "((kind <> 'LOSS'::text) AND (wallet_id = 'be07db12-81db-41cd-bbab-49b90289973d'::uuid) AND (status = 'PROCESSED'::text))",
+                          "Rows Removed by Filter": 15407,
+                          "Shared Hit Blocks": 1788,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 14,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.274,
+            "Triggers": [],
+            "Execution Time": 67.564
+          }
+        }
+      ]
+    }
+  ],
+  "collection_notes": [
+    "Outbox gauges update every 15 seconds; all maxima are observed and approximate.",
+    "Historical Prometheus samples are filtered by database collection timestamps to exclude stale values from previous cases.",
+    "Initial run used 60-second drains for the first three cases and 300 seconds later; final matrix defaults to 600 seconds.",
+    "The 1000-entry/8-wallet case resumed its unchanged prepared wallets, without a second warmup.",
+    "Probes were outside the measured HTTP phase, with one discarded warmup and five retained EXPLAIN samples."
+  ]
+}

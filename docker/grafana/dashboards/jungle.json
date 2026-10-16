@@ -9,7 +9,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 41,
-  "version": 1,
+  "version": 2,
   "editable": false,
   "refresh": "15s",
   "time": {
@@ -2004,6 +2004,43 @@
           "instant": false
         }
       ]
+    },
+    {
+      "id": 37,
+      "type": "logs",
+      "title": "Logs das aplicações",
+      "description": "Loki + Alloy, habilitados pelo perfil logs. Os IDs ficam no JSON, sem labels de alta cardinalidade.",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 121
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "jungle-loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"jungle\",service=~\"$instance\"} | json",
+          "queryType": "range",
+          "datasource": {
+            "type": "loki",
+            "uid": "jungle-loki"
+          }
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
     }
   ]
 }

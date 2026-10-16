@@ -43,7 +43,7 @@ papéis e senhas ficam no provisionamento, fora das migrations do schema.
 schema e os seis objetos tabulares e três funções conhecidos para o migrator.
 Não executa REASSIGN OWNED sobre todos os objetos do administrador, não transfere
 a propriedade do banco e não remove dados. Aplicações antigas devem ser paradas
-durante a troca de propriedade e credenciais. O procedimento está no README.
+durante a troca de propriedade e credenciais. O procedimento está no [guia de operação](../guias/operacao.md#permissões-e-atualização-de-volumes-existentes).
 
 O banco deve ser dedicado ao serviço, pois o provisionamento revoga privilégios
 de PUBLIC. Papéis com memberships inesperadas ou um runtime que já seja dono do

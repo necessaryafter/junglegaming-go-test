@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Exercise three running API processes; creates durable local test wallets."""
 
+import argparse
 import concurrent.futures
 import json
 import os
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -14,7 +16,7 @@ APIS = os.environ.get("TEST_API_URLS", "http://localhost:8081,http://localhost:8
 ISSUER = os.environ.get("TEST_OIDC_ISSUER", "http://localhost:8080/realms/jungle")
 
 
-def call(url, token, method="GET", payload=None, key=None):
+def call(url, token, method="GET", payload=None, key=None, timeout=15):
     headers = {"Authorization": "Bearer " + token}
     data = None
 
@@ -28,25 +30,42 @@ def call(url, token, method="GET", payload=None, key=None):
     request = urllib.request.Request(url, data=data, headers=headers, method=method)
 
     try:
-        response = urllib.request.urlopen(request, timeout=15)
+        response = urllib.request.urlopen(request, timeout=timeout)
     except urllib.error.HTTPError as error:
         response = error
 
     with response:
         return response.status, json.load(response)
-    return None
 
 
-def token(client_id):
+def token(client_id, deadline):
     data = urllib.parse.urlencode({
         "grant_type": "client_credentials",
         "client_id": client_id,
         "client_secret": os.environ.get(client_id.upper().replace("-", "_") + "_SECRET", client_id + "-local-secret"),
     }).encode()
 
-    with urllib.request.urlopen(ISSUER + "/protocol/openid-connect/token", data=data, timeout=10) as response:
-        return json.load(response)["access_token"]
-    return None
+    url = ISSUER + "/protocol/openid-connect/token"
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise RuntimeError("Keycloak did not become ready at " + ISSUER)
+
+        try:
+            with urllib.request.urlopen(url, data=data, timeout=min(10, remaining)) as response:
+                return json.load(response)["access_token"]
+        except urllib.error.HTTPError as error:
+            status = error.code
+            error.close()
+            if status not in (404, 408, 429) and not 500 <= status <= 599:
+                raise RuntimeError(
+                    f"Keycloak authentication failed for {client_id}: HTTP {status}; "
+                    "check the client credentials and realm configuration"
+                ) from error
+        except OSError:
+            pass
+
+        time.sleep(min(.5, max(0, deadline - time.monotonic())))
 
 
 def require(condition, message):
@@ -86,13 +105,37 @@ def verify_wallet(internal, wallet):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--duplicates', type=int, default=50)
+    parser.add_argument('--concurrency', type=int, default=50)
+    parser.add_argument('--startup-timeout', type=int, default=180,
+                        help='seconds to wait for Keycloak and the APIs (default: 180)')
+    args = parser.parse_args()
+    if not 2 <= args.duplicates <= 100000:
+        parser.error('duplicates must be between 2 and 100000')
+    if not 1 <= args.concurrency <= 256:
+        parser.error('concurrency must be between 1 and 256')
+    if args.startup_timeout <= 0:
+        parser.error('startup-timeout must be positive')
+
     require(len(APIS) >= 3 and len(set(APIS)) >= 3, "provide at least three distinct process URLs")
-    internal = token("jungle-internal")
-    provider = token("provider-a")
+    print("WAIT: Keycloak and three API processes", flush=True)
+    deadline = time.monotonic() + args.startup_timeout
+    internal = token("jungle-internal", deadline)
+    provider = token("provider-a", deadline)
 
     for api in APIS:
-        status, _ = call(api + "/health/ready", internal)
-        require(status == 200, api + " is not ready")
+        while True:
+            remaining = deadline - time.monotonic()
+            require(remaining > 0, api + " is not ready")
+            try:
+                status, _ = call(api + "/health/ready", internal, timeout=min(15, remaining))
+                if status == 200:
+                    break
+            except (OSError, ValueError):
+                pass
+            time.sleep(min(.25, max(0, deadline - time.monotonic())))
+    print("READY: three independent API processes", flush=True)
 
     wallet = open_wallet(internal)
     operation = bet(wallet)
@@ -101,14 +144,25 @@ def main():
     def duplicate(index):
         return call(APIS[index % len(APIS)] + "/wagering/transactions", provider, "POST", operation, key)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
-        results = list(executor.map(duplicate, range(50)))
+    print("WALLET: 100.00 BRL | one BET: 80.00 BRL", flush=True)
+    print(f"SEND: {args.duplicates} copies | {args.concurrency} concurrent clients | 3 APIs", flush=True)
+    results = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.concurrency) as executor:
+        futures = [executor.submit(duplicate, index) for index in range(args.duplicates)]
+        interval = max(1, args.duplicates // 5)
+        for future in concurrent.futures.as_completed(futures):
+            results.append(future.result())
+            if len(results) % interval == 0 or len(results) == args.duplicates:
+                print(f"RECEIVED: {len(results)}/{args.duplicates}", flush=True)
 
     require(all(status == 200 and result["status"] == "PROCESSED" for status, result in results), "duplicate processing failed")
-    require(sum(result["idempotentReplay"] for _, result in results) == 49, "expected exactly 49 replays")
+    require(sum(result["idempotentReplay"] for _, result in results) == args.duplicates - 1, "unexpected replay count")
     require(len({result["transactionId"] for _, result in results}) == 1, "duplicate transaction IDs")
     verify_wallet(internal, wallet)
+    print(f"PASS: 1 processed | {args.duplicates - 1} replays | 1 debit", flush=True)
+    print("RECONCILIATION: balance 20.00 BRL | opening + debit = 2 entries", flush=True)
 
+    print("RACE: two distinct BETs of 80.00 BRL against 100.00 BRL", flush=True)
     contested = open_wallet(internal)
     operations = [bet(contested), bet(contested)]
 
@@ -123,7 +177,8 @@ def main():
     require(any(result.get("failureCode") == "INSUFFICIENT_BALANCE" for _, result in results), "missing balance rejection")
     verify_wallet(internal, contested)
 
-    print("PASS: three API processes, 50 duplicates, two competing bets, final balances 20.00, consistent ledgers")
+    print("PASS: 1 processed | 1 INSUFFICIENT_BALANCE | balance 20.00 BRL", flush=True)
+    print("PASS: both wallets reconcile; no duplicate financial movement", flush=True)
     print("Created test wallets:", wallet["id"], contested["id"])
 
 
