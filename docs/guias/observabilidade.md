@@ -8,7 +8,7 @@ estão indisponíveis.
 ## Logs dos workers
 
 Os registros dos workers descritos abaixo usam JSON e campos selecionados
-explicitamente; não registram tokens,
+explicitamente; não registram tokens, assinaturas `MessageSignature`, chaves,
 receipt handles, chave de idempotência, jogador, valores monetários, payloads
 completos ou texto bruto de erros externos/SQL.
 
@@ -175,28 +175,83 @@ Além das permissões de negócio, a identidade do coletor precisa de
 `sqs:GetQueueAttributes` e `sqs:GetQueueUrl` nas fontes e DLQs, e
 `cloudwatch:GetMetricStatistics` para ler o namespace `AWS/SQS`.
 O coletor não precisa de `sqs:ReceiveMessage` ou `sqs:DeleteMessage` nas DLQs.
-A segregação de identidades por produtor permanece uma pendência separada.
+As permissões estão em `docker/sqs/runtime-policy.json`. A identidade de runtime
+recebe e confirma entradas, publica eventos e lê métricas; cada produtor tem
+credenciais próprias e apenas resolve/publica na fila de entrada. As assinaturas
+de mensagem vinculam a entrada ao provedor também após espera na fila ou DLQ.
 
-Compose habilita `sqs,cloudwatch` no LocalStack 4.0.3. Essa versão não gera
-automaticamente a métrica de idade; localmente ela pode aparecer como `NaN`.
-O teste de integração publica uma amostra controlada no CloudWatch para
-validar sua leitura. O código de produção apenas lê métricas.
-O SDK CloudWatch está fixado em `v1.52.8`, que usa AWS Query: a mudança para
-RPC CBOR em `v1.53.0` é incompatível com esse emulador. Atualize SDK e emulador
-em conjunto ao remover essa restrição.
+O serviço chamado `localstack` no Compose usa MiniStack 1.5.27, com
+`sqs,iam,sts,cloudwatch` e `AUTH=true`, para verificar políticas IAM e credenciais
+independentes. O emulador não gera automaticamente a métrica de idade; localmente
+ela pode aparecer como `NaN`. O teste de integração publica uma amostra controlada
+no CloudWatch para validar sua leitura. O código de produção apenas lê métricas.
+O SDK CloudWatch permanece em `v1.52.8`, que usa AWS Query; essa versão foi
+selecionada para compatibilidade com o emulador anterior. Qualquer atualização
+deve preservar os testes reais de coleta.
+
+As credenciais administrativas locais usadas no provisionamento são exclusivas
+de desenvolvimento. O runtime não recebe essas credenciais nem as chaves privadas
+dos produtores. O teste `TestRealProducerPermissions` confere aceites e negativas
+reais do broker, incluindo secret incorreta e revogação independente por produtor.
 
 A cobertura inclui histogramas, limites dos buckets, scrapes concorrentes,
 indisponibilidade, labels sem IDs, conflito real no PostgreSQL, fluxo HTTP/SQS
 composto pelo Fx e coleta real de filas/DLQ sem consumir sua mensagem.
-Na validação desta mudança, a suíte completa com `-tags=integration -race`
-passou em todos os cenários exceto `TestDatabaseFailureRedriveAndRecovery` quando
-executado em uma instância temporária na porta 14566: o subprocesso não recebeu
-a mensagem reenviada. O mesmo erro foi reproduzido no último commit, sem esta
-implementação. O cenário passou com a implementação atual na instância padrão,
-porta 4566. As novas integrações de observabilidade passaram na porta 14566.
-Durante a separação dos componentes de worker, o mesmo cenário também falhou
-uma vez na porta 4566 na execução conjunta de `worker` e `app`, e passou na
-repetição isolada com o código atual. A instabilidade não está restrita à porta
-alternativa. Não há alteração do fluxo de recuperação para contornar a falha.
+A regressão completa com `go test -tags=integration -race ./... -count=1` passou
+com PostgreSQL, Keycloak e MiniStack reais, incluindo autorização HTTP, políticas
+IAM por produtor, assinaturas de mensagem, redrive e recuperação.
 
-Dashboards, alertas provisionados e tracing ainda não foram implementados.
+Em execuções anteriores com LocalStack 4.0.3, `TestDatabaseFailureRedriveAndRecovery`
+falhou intermitentemente porque o subprocesso não recebeu a mensagem reenviada.
+A falha também foi reproduzida sem as mudanças de observabilidade e passou em
+repetição isolada; ocorreu tanto na porta padrão quanto na alternativa. Esse
+histórico não caracteriza uma falha na última regressão, nem houve alteração do
+fluxo de recuperação para contorná-lo.
+
+## Grafana e Prometheus no Compose
+
+`docker compose up --build -d` inicia também Prometheus e Grafana. Para adicionar
+somente a observabilidade a uma aplicação que já está rodando no Compose:
+
+```sh
+docker compose up -d prometheus grafana
+```
+
+Acesse [Jungle · Visão operacional](http://localhost:3000/d/jungle-overview),
+na pasta `Jungle`, com `admin` / `grafana-local`. A dashboard também é a página
+inicial do Grafana. `GRAFANA_PORT`, `GRAFANA_ADMIN_USER`,
+`GRAFANA_ADMIN_PASSWORD` e `PROMETHEUS_PORT` podem ser definidos no `.env`.
+As credenciais de administrador são aplicadas na primeira inicialização do volume;
+alterar a variável depois disso não troca a senha já persistida.
+
+O provisionamento usa a [configuração oficial do Grafana](https://grafana.com/docs/grafana/latest/administration/provisioning/):
+
+- `docker/grafana/provisioning/datasources/prometheus.yml` registra a fonte
+  `jungle-prometheus` em `http://prometheus:9090`.
+- `docker/grafana/provisioning/dashboards/jungle.yml` carrega a pasta de dashboards.
+- `docker/grafana/dashboards/jungle.json` define os painéis versionados. Edite esse
+  arquivo para mudar a dashboard; as alterações são recarregadas automaticamente.
+- `docker/prometheus/prometheus.yml` coleta `/metrics` a cada 15 segundos com
+  timeout de cinco segundos, usando descoberta DNS de `app`, `app-2` e `app-3`.
+
+As réplicas opcionais aparecem quando o perfil `replicas` está ativo, sem mudar
+a configuração. Serviços ausentes do DNS não aparecem como alvos indisponíveis;
+`up` indica sucesso do scrape dos alvos descobertos, sem substituir readiness.
+O filtro **Instância** permite observar uma ou todas as réplicas. A configuração
+padrão atende aplicações no Compose; uma aplicação executada no host exige
+adaptar os alvos no arquivo do Prometheus e reiniciar o serviço.
+
+Os painéis somam taxas de contadores por processo e usam `max` nos backlogs
+compartilhados. Indicadores de coleta e timestamps são exibidos por instância
+para revelar falhas parciais. Valores `NaN` permanecem desconhecidos: os painéis
+não os convertem em zero. Histogramas e contadores com labels podem não existir
+antes da primeira operação; taxas precisam de pelo menos dois scrapes. A idade
+SQS pode ficar sem dados localmente porque o MiniStack não gera amostras sozinho.
+
+O Prometheus fica em `http://localhost:9090`, retém 15 dias e persiste em
+`prometheus-data`; o Grafana persiste em `grafana-data`. As duas portas ficam
+restritas a `127.0.0.1`, seguindo os demais serviços locais. O monitoramento não
+depende da saúde da API para iniciar, permitindo inspecionar sua indisponibilidade.
+`docker compose down` preserva os volumes; `down -v` apaga também esses dados.
+
+Alertas provisionados e tracing ainda não foram implementados.

@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+  scrape_timeout: 5s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: jungle
+    metrics_path: /metrics
+    # DNS discovery includes optional replicas only while their containers exist.
+    dns_sd_configs:
+      - names: [app, app-2, app-3]
+        type: A
+        port: 8081
+        refresh_interval: 15s
+    relabel_configs:
+      - source_labels: [__meta_dns_name]
+        target_label: instance
+        regex: '([^.]*)\.?'
+        replacement: '$1'

@@ -21,7 +21,7 @@ corrigir a operação exige outro ID externo e outra chave.
 
 ## Verificação e detalhes do prazo
 
-A [matriz de reversões](../matriz-reversoes.md) cobre as regras no domínio e
+A [matriz de reversões](../testes/matriz-reversoes.md) cobre as regras no domínio e
 seus efeitos duráveis no PostgreSQL, incluindo disputas entre pools independentes.
 Uma reversão rejeitada não ocupa a vaga da referência; uma nova operação pode
 ser processada depois de recompor o saldo. O replay da rejeição permanece rejeitado.

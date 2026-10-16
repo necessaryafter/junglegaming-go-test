@@ -15,5 +15,8 @@ As decisões estão registradas em ADRs curtas, com a decisão e seu motivo.
 - [0011 - Migrations com golang-migrate](docs/adr/0011-migrations.md)
 - [0012 - Permissões do banco por responsabilidade](docs/adr/0012-permissoes-do-banco.md)
 
-A base integrada ainda não conclui todos os critérios do desafio.
+HTTP usa o IdP externo Keycloak; SQS usa políticas IAM segregadas e assinaturas
+duráveis Ed25519 por produtor, conforme a [ADR 0006](docs/adr/0006-autenticacao-e-autorizacao.md).
+O ambiente local executa MiniStack com avaliação IAM habilitada.
+
 Veja [limitações e verificações pendentes](docs/pendencias.md).

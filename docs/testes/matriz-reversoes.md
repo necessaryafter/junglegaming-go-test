@@ -1,6 +1,6 @@
 # Matriz de reversões e referências
 
-A política financeira está no [ADR 0005](adr/0005-referencias-e-reversoes.md).
+A política financeira está no [ADR 0005](../adr/0005-referencias-e-reversoes.md).
 Os testes de domínio estão em `internal/wagering/domain/wager/reference_test.go`;
 os de integração, em `internal/wagering/postgres/reversals_integration_test.go`.
 
@@ -25,7 +25,7 @@ na outbox. As sequências financeiras também conferem a versão da carteira.
 Fixtures históricas de expiração são inseridas com criação 25 horas no passado,
 sem sleeps ou desativação de triggers. Elas não simulam um restart de processo.
 
-Com PostgreSQL real iniciado conforme o [README](../README.md#testes):
+Com PostgreSQL real iniciado conforme o [README](../../README.md#testes):
 
 ```sh
 go test ./internal/wagering/domain/wager -run '^TestReference' -count=1
@@ -37,4 +37,4 @@ go test -tags=integration -race ./internal/wagering/postgres \
 ```
 
 A recuperação após interrupção entre três processos e a matriz de transporte
-HTTP/SQS com redrive continuam nas [pendências](pendencias.md).
+HTTP/SQS com redrive continuam nas [pendências](../pendencias.md).
